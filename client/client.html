@@ -41,6 +41,7 @@
 
 	<!-- socket.io loaded to io var -->
 	<script src="/socket.io/socket.io.js"></script>
+	<script src="pixi.min.js"></script>
 	
 	<!-- Link up for server communication -->
 	<script>
@@ -142,7 +143,6 @@
 				// which object is being updated
 				switch (data.object) {
 					case "player":
-						console.dir(data);
 						if (data.pos) {
 							player.pos = data.pos;
 						}
@@ -152,7 +152,7 @@
 						if (data.side) {
 							player.side = data.side;
 						}
-						if(data.grabbed != null) {
+						if (data.grabbed != null) {
 							player.grabbed = data.grabbed;
 						}
 						break;
@@ -193,7 +193,6 @@
 			
 			// Callback for game end
 			socket.on("end", function(data) {
-				console.log(data.side);
 				// player win
 				if (data.side == player.side) {
 					msgBox.innerHTML = player.name + " wins!";

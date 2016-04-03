@@ -4,7 +4,7 @@
   "description": "A competitive physics based action game.",
   "main": "index.js",
   "scripts": {
-	"start": "node ./src/server.js",
+	"start": "node ./src/game.js",
     "pretest": "jshint ./src",
     "test": "echo \"Test Complete\""
   },

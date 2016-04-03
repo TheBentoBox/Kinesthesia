@@ -3,10 +3,12 @@
 "use strict";
 
 var Matter = require("matter-js");
+var InputManager = require("./InputManager.js");
 
 // CLASS: handles an instance of Kinesthesia
 class GameManager {
 	constructor(io, roomName, player1, player2) {
+		// Initalize class variables
 		this.io = io;
 		this.room = roomName;
 		this.p1 = player1;
@@ -14,22 +16,21 @@ class GameManager {
 		this.p2 = player2;
 		this.p2.score = 0;
 		
-		// pass new players to handlers
+		// Pass new players to update event handlers
 		this.onUpdate(this.p1);
 		this.onUpdate(this.p2);
-		this.onClick(this.p1);
-		this.onClick(this.p2);
-		this.onRelease(this.p1);
-		this.onRelease(this.p2);
 		
-		// set up Matter for physics
-		this.initializeMatter();
+		// Pass player sockets to InputManager to set up input events
+		this.Input = new InputManager(io, this, this.p1, this.p2);
 		
-		// set screen size
+		// Set screen size
 		this.screen = {
 			x: 640,
 			y: 480
 		};
+		
+		// Setup Matter for physics
+		this.initializeMatter();
 		
 		// size constants
 		this.playerRad = 4;
@@ -127,7 +128,7 @@ class GameManager {
 		
 		// create the ground and add it to the world
 		this.ground = this.Bodies.rectangle(0, this.screen.y - 20, this.screen.x, 20, { isStatic: true });
-		this.World.add(this.engine.world, [ground]);
+		this.World.add(this.engine.world, [this.ground]);
 	}
 	
 	// Callback for user update
@@ -142,91 +143,6 @@ class GameManager {
 				}
 			);
 		});
-	}
-	
-	// Callback for user click
-	onClick(socket) {
-		socket.on("click", function(data) {
-			// check click against all gems, starting from the closest to the camera
-			for (var i = this.gems.length - 1; i >= 0; i--) {
-				if(this.distance(data.pos, this.gems[i]) < (this.gemRad + this.playerRad)) {					
-					// remove clicked gem from world array
-					this.gems.splice(i, 1);
-					
-					// update players of interaction
-					this.io.sockets.in(this.room).emit(
-						"update",
-						{
-							object: "gems",
-							gems: this.gems
-						}
-					);
-					
-					socket.emit(
-						"update",
-						{
-							object: "player",
-							grabbed: 1
-						}
-					);
-					
-					socket.broadcast.to(socket.room).emit(
-						"update",
-						{
-							object: "opponent",
-							grabbed: 1
-						}
-					);
-					
-					return;
-				}
-			}
-		}.bind(this));
-	}
-	
-	// Callback for user click release
-	onRelease(socket) {
-		socket.on("release", function(data) {		
-			// force grabbed to 0
-			socket.emit(
-				"update",
-				{
-					object: "player",
-					grabbed: 0
-				}
-			);
-						
-			socket.broadcast.to(socket.room).emit(
-				"update",
-				{
-					object: "opponent",
-					grabbed: 0
-				}
-			);
-			
-			// make sure player has a gem grabbed
-			if(data.grabbed == 1) {
-				// add new gem to world where player dropped it
-				var newGem = {
-					x: data.pos.x,
-					y: data.pos.y
-				};
-				
-				this.gems.push(newGem);
-				
-				// update players of interaction
-				this.io.sockets.in(this.room).emit(
-					"update",
-					{
-						object: "gems",
-						gems: this.gems
-					}
-				);
-				
-				// check for scored point
-				this.checkScore();
-			}
-		}.bind(this));
 	}
 	
 	// FUNCTION: distance formula
@@ -277,7 +193,7 @@ class GameManager {
 		}
 		
 		// check for win
-		if(this.gems.length == 0) {
+		if(this.gems.length === 0) {
 			// player 1 wins
 			if(this.p1.score > this.p2.score) {
 				this.io.sockets.in(this.room).emit("end", {side: 0});
