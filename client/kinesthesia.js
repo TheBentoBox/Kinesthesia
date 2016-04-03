@@ -96,7 +96,6 @@ function setupSocket() {
 		// which object is being updated
 		switch (data.object) {
 			case "player":
-				console.dir(data);
 				if (data.pos) {
 					player.pos = data.pos;
 				}
@@ -106,12 +105,11 @@ function setupSocket() {
 				if (data.side) {
 					player.side = data.side;
 				}
-				if(data.grabbed != null) {
+				if (data.grabbed != null) {
 					player.grabbed = data.grabbed;
 				}
 				break;
 			case "opponent":
-				console.dir(data);
 				if (data.pos) {
 					opponent.pos = data.pos;
 				}
@@ -147,7 +145,6 @@ function setupSocket() {
 	
 	// Callback for game end
 	socket.on("end", function(data) {
-		console.log(data.side);
 		// player win
 		if (data.side == player.side) {
 			msgBox.innerHTML = player.name + " wins!";
