@@ -99,8 +99,6 @@ class GameManager {
 				side: 0
 			}
 		);
-			
-		this.emitGems();
 		
 		// start player update loops
 		this.io.sockets.in(this.room).emit("play");

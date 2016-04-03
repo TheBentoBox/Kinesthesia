@@ -1,14 +1,29 @@
 // requires
 var http = require('http');
-var fs = require('fs');
+var path = require('path');
+var express = require('express');
+var compression = require('compression');
+var favicon = require('serve-favicon');
 var socketio = require('socket.io');
-var GameManager = require("./GameManager.js");
+var GameManager = require('./GameManager.js');
+
+// pull in routes
+var router = require('./router.js');
 
 // try to use node's port or default to 3000
 var port = process.env.PORT || process.env.NODE_PORT || 3000;
 
-// read html page
-var index = fs.readFileSync(__dirname + "/../client/client.html");
+// setup express app
+var app = express();
+app.use('/assets', express.static(path.resolve(__dirname + '/../client')));
+app.use(compression());
+app.set('view engine', 'jade');
+app.set('views', __dirname + '/views');
+app.use(favicon(__dirname + '/../client/images/gem.png'));
+app.disable('x-powered-by');
+
+// setup http with express app
+var server = http.Server(app);
 
 // current open room number
 var roomNum = 1;
@@ -20,12 +35,19 @@ var queue = [];
 // all running games
 var games = [];
 
-// create server and listen to port
-var app = http.createServer(onRequest).listen(port);
-console.log("Listening on port " + port);
+// pass app to router
+router(app);
 
 // create websocket server
-var io = socketio(app);
+var io = socketio(server);
+
+// start listening with app
+server.listen(port, function(err) {
+	if(err) {
+		throw err;
+	}
+	console.log("Listening on port " + port);
+});
 
 // FUNCTION: returns game page on request
 function onRequest(request, response) {
