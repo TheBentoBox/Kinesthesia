@@ -4,7 +4,7 @@
   "description": "A competitive physics based action game.",
   "main": "index.js",
   "scripts": {
-	"start": "node ./src/server.js",
+    "start": "node ./src/game.js",
     "pretest": "jshint ./src",
     "test": "echo \"Test Complete\""
   },
@@ -15,8 +15,12 @@
     "url": "https://github.com/TheBentoBox/Kinesthesia.git"
   },
   "dependencies": {
+	"compression": "^1.6.1",
+    "express": "^4.13.4",
     "matter-js": "^0.9.1",
     "pixi.js": "^3.0.10",
+	"jade": "^1.11.0",
+	"serve-favicon": "^2.3.0",
     "socket.io": "^1.4.5"
   },
   "devDependencies": {

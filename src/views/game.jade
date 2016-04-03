@@ -1,0 +1,15 @@
+extends ./base.jade
+block append style
+	link(rel="stylesheet", type="text/css", href="/assets/css/gameStyle.css")
+block body
+	h1 Kinesthesia
+	p#msgBox Enter a username to connect
+	#connectForm
+		label(for="user") Username:
+		input#usernameInput(name="user", type="text")
+		input#connectBut(type="button" value="Connect")
+	#canvasBox
+		canvas#gameCanvas(width="640" height="480") Your browser does not support Canvas :( Upgrade to a newer browser to play.
+block scripts
+	script(src="/socket.io/socket.io.js")
+	script(src="/assets/kinesthesia.js")

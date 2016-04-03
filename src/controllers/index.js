@@ -1,0 +1,1 @@
+module.exports.ViewManager = require("./ViewManager.js");

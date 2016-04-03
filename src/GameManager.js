@@ -22,14 +22,14 @@ class GameManager {
 		this.onRelease(this.p1);
 		this.onRelease(this.p2);
 		
-		// set up Matter for physics
-		this.initializeMatter();
-		
 		// set screen size
 		this.screen = {
 			x: 640,
 			y: 480
 		};
+		
+		// set up Matter for physics
+		this.initializeMatter();
 		
 		// size constants
 		this.playerRad = 4;
@@ -127,7 +127,7 @@ class GameManager {
 		
 		// create the ground and add it to the world
 		this.ground = this.Bodies.rectangle(0, this.screen.y - 20, this.screen.x, 20, { isStatic: true });
-		this.World.add(this.engine.world, [ground]);
+		this.World.add(this.engine.world, [this.ground]);
 	}
 	
 	// Callback for user update
@@ -277,7 +277,7 @@ class GameManager {
 		}
 		
 		// check for win
-		if(this.gems.length == 0) {
+		if(this.gems.length === 0) {
 			// player 1 wins
 			if(this.p1.score > this.p2.score) {
 				this.io.sockets.in(this.room).emit("end", {side: 0});
