@@ -99,4 +99,4 @@ io.sockets.on("connection", function(socket) {
 	onDisconnect(socket);
 });
 
-console.log("Gem Thief server started");
+console.log("Kinesthesia server started");
