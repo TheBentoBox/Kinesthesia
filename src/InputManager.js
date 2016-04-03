@@ -21,19 +21,13 @@ class InputManager {
 	onClick(socket) {
 		socket.on("click", function(data) {
 			// check click against all gems, starting from the closest to the camera
-			for (var i = this.Manager.gems.length - 1; i >= 0; i--) {
-				if(this.Manager.distance(data.pos, this.Manager.gems[i]) < (this.Manager.gemRad + this.Manager.playerRad)) {					
+			for (var i = this.Manager.engine.world.bodies.length - 1; i >= 0; i--) {
+				if(this.Manager.distance(data.pos, this.Manager.engine.world.bodies.position[i]) < (this.Manager.gemRad + this.Manager.playerRad)) {					
 					// remove clicked gem from world array
-					this.Manager.gems.splice(i, 1);
+					this.Manager.engine.world.bodies.splice(i, 1);
 					
 					// update players of interaction
-					this.io.sockets.in(this.Manager.room).emit(
-						"update",
-						{
-							object: "gems",
-							gems: this.Manager.gems
-						}
-					);
+					this.Manager.emitGems();
 					
 					socket.emit(
 						"update",

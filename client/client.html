@@ -41,7 +41,6 @@
 
 	<!-- socket.io loaded to io var -->
 	<script src="/socket.io/socket.io.js"></script>
-	<script src="pixi.min.js"></script>
 	
 	<!-- Link up for server communication -->
 	<script>
@@ -171,8 +170,8 @@
 							opponent.grabbed = data.grabbed;
 						}
 						break;
-					case "gems":
-						gems = data.gems;
+					case "gem":
+						gems.push(data.gem);
 						break;
 				}
 			});
@@ -244,7 +243,7 @@
 			ctx.fillStyle = "#00d";
 			for (var i = 0; i < gems.length; i++) {
 				ctx.beginPath();
-				ctx.arc(gems[i].x, gems[i].y, gemRad, 0, Math.PI*2);
+				ctx.arc(gems[i].position.x, gems[i].position.y, gemRad, 0, Math.PI*2);
 				ctx.fill();
 			}
 			

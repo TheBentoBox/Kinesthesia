@@ -50,13 +50,15 @@ class GameManager {
 		// randomly create gems
 		this.gems = [];
 		for (var i = 0; i < 20; i++) {
-			var newGem = {};
-			newGem = {
-				x: (Math.random() * (this.screen.x - (2 * this.goalWidth) - (2 * this.gemRad)) + this.goalWidth + this.gemRad),
-				y: (Math.random() * (this.screen.y - (2 * this.gemRad)) + this.gemRad)
-			};
+			var newGem = this.Bodies.rectangle(
+				(Math.random() * (this.screen.x - (2 * this.goalWidth) - (2 * this.gemRad)) + this.goalWidth + this.gemRad),
+				(Math.random() * (this.screen.y - (2 * this.gemRad)) + this.gemRad),
+				this.gemRad,
+				this.gemRad
+			);
 			this.gems.push(newGem);
 		}
+		this.World.add(this.engine.world, this.gems);
 		
 		// update player 1
 		this.p1.emit("msg", {msg: "Game started. You are playing against " + this.p2.name + "."});
@@ -75,13 +77,6 @@ class GameManager {
 				name: this.p2.name,
 				pos: this.p2.pos,
 				side: 1
-			}
-		);
-		this.p1.emit(
-			"update",
-			{
-				object: "gems",
-				gems: this.gems
 			}
 		);
 		
@@ -104,16 +99,24 @@ class GameManager {
 				side: 0
 			}
 		);
-		this.p2.emit(
-			"update",
-			{
-				object: "gems",
-				gems: this.gems
-			}
-		);
+			
+		this.emitGems();
 		
 		// start player update loops
 		this.io.sockets.in(this.room).emit("play");
+	}
+	
+	
+	emitGems() {
+		for (var i = 0; i < this.engine.world.bodies.length; ++i) {
+			this.io.sockets.in(this.room).emit(
+				"update",
+				{
+					object: "gem",
+					gem: this.engine.world.bodies[i]
+				}
+			);
+		}
 	}
 	
 	// Sets up Matter engine and world
