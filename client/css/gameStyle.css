@@ -24,9 +24,3 @@ h1 {
 div {
 	width: 100%;
 }
-
-canvas {
-	border: 1px solid black; 
-	margin: 10px;
-	cursor: none;
-}

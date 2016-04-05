@@ -98,10 +98,17 @@ function setupSocket() {
 	
 	// Callback for receiving a new physics body from manager
 	socket.on("sendOrUpdateBody", function(data) {
-		console.log(data);
+		// Create new basic physics object
+		var newObj = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
+		delete data.position;
+		delete data.bounds;
 		
-		// Create object with the data
-		var newObj = Bodies.rectangle(0, 0, 0, 0, data);
+		// Apply all the passed data properties to the new object
+		for (var i = 0; i < Object.keys(data).length; ++i) {
+			newObj[Object.keys(data)[i]] = data[Object.keys(data)[i]];
+		}
+		
+		// Add the object to the world
 		World.add(engine.world, newObj);
 	});
 	
@@ -171,6 +178,7 @@ function setupSocket() {
 	});
 	
 	// setup canvas mouse down behavior
+	/*
 	canvas.addEventListener('mousedown', function(e) {
 		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
 		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
@@ -185,6 +193,7 @@ function setupSocket() {
 						
 		socket.emit('release', {pos: player.pos, grabbed: player.grabbed});
 	});
+	*/
 }
 
 // FUNCTION: initializes game space (Matter)
@@ -193,7 +202,7 @@ function initializeGame() {
 	initializeMatter();
 	
 	// Begin update tick
-	update();
+	setTimeout(update, 100);
 }
 
 // FUNCTION: initializes Matter.js game world
@@ -204,84 +213,29 @@ function initializeMatter() {
 	Bodies = Matter.Bodies;
 		
 	// create an engine
-	engine = Engine.create();
+	engine = Engine.create({
+		render: {
+			element: document.body,
+			controller: Matter.RenderPixi
+		}
+	});
+	
+	// get reference to game canvas and context
+	canvas = document.querySelector("canvas");
+	canvasPos = canvas.getBoundingClientRect();
+	ctx = canvas.getContext("2d");
+	
+	// setup canvas mouse movement behavior
+	document.addEventListener('mousemove', function(e) {
+		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
+		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
+	});
+	
+	setTimeout(Engine.run, 100, engine);
 }
 
 // FUNCTION: update local game instance
 function update() {
-	// clear screen
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	
-	// fill background
-	ctx.fillStyle = "#eee";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	
-	// draw goals
-	ctx.fillStyle = "#0b0";
-	ctx.fillRect(0, 0, goalWidth, canvas.height);
-	
-	ctx.fillStyle = "#b00";
-	ctx.fillRect(canvas.width - goalWidth, 0, goalWidth, canvas.height);
-	
-	// draw all gems
-	ctx.fillStyle = "#00d";
-	for (var i = 0; i < gems.length; i++) {
-		ctx.beginPath();
-		ctx.arc(gems[i].x, gems[i].y, gemRad, 0, Math.PI*2);
-		ctx.fill();
-	}
-	
-	// draw grabbed gems
-	if (player.grabbed == 1) {
-		ctx.fillStyle = "#00e";
-		ctx.beginPath();
-		ctx.arc(player.pos.x, player.pos.y, gemRad, 0, Math.PI*2);
-		ctx.fill();
-	}
-	
-	if (opponent.grabbed == 1) {
-		ctx.fillStyle = "#00e";
-		ctx.beginPath();
-		ctx.arc(opponent.pos.x, opponent.pos.y, gemRad, 0, Math.PI*2);
-		ctx.fill();
-	}
-	
-	// draw player cursors and scores
-	if (player.side == 0) {
-		ctx.fillStyle = "#0e0"
-		ctx.beginPath();
-		ctx.arc(player.pos.x, player.pos.y, playerRad, 0, Math.PI*2);
-		ctx.fill();
-		
-		ctx.fillStyle = "#e00"
-		ctx.beginPath();
-		ctx.arc(opponent.pos.x, opponent.pos.y, playerRad, 0, Math.PI*2);
-		ctx.fill();
-	
-		ctx.fillStyle = "#000"
-		ctx.textAlign = "left";
-		ctx.fillText(player.name + ": " + player.score, 5, 25);
-		ctx.textAlign = "right";
-		ctx.fillText(opponent.score + " :" + opponent.name, canvas.width - 5, 25);
-	}
-	else {
-		ctx.fillStyle = "#0e0"
-		ctx.beginPath();
-		ctx.arc(opponent.pos.x, opponent.pos.y, playerRad, 0, Math.PI*2);
-		ctx.fill();
-		
-		ctx.fillStyle = "#e00"
-		ctx.beginPath();
-		ctx.arc(player.pos.x, player.pos.y, playerRad, 0, Math.PI*2);
-		ctx.fill();
-	
-		ctx.fillStyle = "#000"
-		ctx.textAlign = "left";
-		ctx.fillText(opponent.name + ": " + opponent.score, 5, 25);
-		ctx.textAlign = "right";
-		ctx.fillText(player.score + " :" + player.name, canvas.width - 5, 25);
-	}
-	
 	// emit player position
 	socket.emit("update", {pos: player.pos})
 	
@@ -291,25 +245,11 @@ function update() {
 
 // FUNCTION: setup page
 function init() {
-	// get reference to game canvas and context
-	canvas = document.querySelector("#gameCanvas");
-	canvasPos = canvas.getBoundingClientRect();
-	ctx = canvas.getContext("2d");
-	
 	// grab feedback box
 	msgBox = document.querySelector("#msgBox");
 	
 	// add callback for connect button
 	document.querySelector("#connectBut").addEventListener('click', setupSocket);
-	
-	// setup canvas mouse movement behavior
-	document.addEventListener('mousemove', function(e) {
-		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
-		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
-	});
-	
-	// setup canvas text
-	ctx.font = "16pt helvetica";
 }
 
 window.onload = init;

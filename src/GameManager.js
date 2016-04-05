@@ -25,8 +25,8 @@ class GameManager {
 		
 		// Set screen size
 		this.screen = {
-			x: 640,
-			y: 480
+			x: 800,
+			y: 600
 		};
 		
 		// Setup Matter for physics
@@ -49,7 +49,7 @@ class GameManager {
 		
 		// randomly create gems
 		this.gems = [];
-		for (var i = 0; i < 20; i++) {
+		for (var i = 0; i < 21; i++) {
 			var newGem = this.Bodies.rectangle(
 				(Math.random() * (this.screen.x - (2 * this.goalWidth) - (2 * this.gemRad)) + this.goalWidth + this.gemRad),
 				(Math.random() * (this.screen.y - (2 * this.gemRad)) + this.gemRad),
@@ -59,7 +59,6 @@ class GameManager {
 			this.gems.push(newGem);
 		}
 		this.World.add(this.engine.world, this.gems);
-		console.log(this.engine.world.bodies);
 		
 		// update player 1
 		this.p1.emit("msg", {msg: "Game started. You are playing against " + this.p2.name + "."});
@@ -124,7 +123,8 @@ class GameManager {
 			isSleeping: physBody.isSleeping,
 			bounds: physBody.bounds,
 			positionPrev: physBody.positionPrev,
-			anglePrev: physBody.anglePrev
+			anglePrev: physBody.anglePrev,
+			isStatic: physBody.isStatic
 		}
 	}
 	
@@ -149,7 +149,7 @@ class GameManager {
 		this.engine = this.Engine.create();
 		
 		// create the ground and add it to the world
-		this.ground = this.Bodies.rectangle(0, this.screen.y - 20, this.screen.x, 20, { isStatic: true });
+		this.ground = this.Bodies.rectangle(this.screen.x/2, this.screen.y - 20, this.screen.x, 20, { isStatic: true });
 		this.World.add(this.engine.world, [this.ground]);
 	}
 	
