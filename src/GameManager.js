@@ -59,6 +59,7 @@ class GameManager {
 			this.gems.push(newGem);
 		}
 		this.World.add(this.engine.world, this.gems);
+		console.log(this.engine.world.bodies);
 		
 		// update player 1
 		this.p1.emit("msg", {msg: "Game started. You are playing against " + this.p2.name + "."});
@@ -102,17 +103,37 @@ class GameManager {
 		
 		// start player update loops
 		this.io.sockets.in(this.room).emit("play");
+		
+		// now that play has begun, send the world bodies
+		this.emitGems();
+	}
+	
+	
+	// Process a Matter body and returns a slimmed down version of it
+	processBody(physBody) {
+		return {
+			id: physBody.id,
+			angle: physBody.angle,
+			position: physBody.position,
+			force: physBody.force,
+			torque: physBody.torque,
+			speed: physBody.speed,
+			angularSpeed: physBody.angularSpeed,
+			velocity: physBody.velocity,
+			angularVelocity: physBody.velocity,
+			isSleeping: physBody.isSleeping,
+			bounds: physBody.bounds,
+			positionPrev: physBody.positionPrev,
+			anglePrev: physBody.anglePrev
+		}
 	}
 	
 	
 	emitGems() {
 		for (var i = 0; i < this.engine.world.bodies.length; ++i) {
 			this.io.sockets.in(this.room).emit(
-				"update",
-				{
-					object: "gem",
-					gem: this.engine.world.bodies[i]
-				}
+				"sendOrUpdateBody",
+				this.processBody(this.engine.world.bodies[i])
 			);
 		}
 	}

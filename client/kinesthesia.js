@@ -20,6 +20,11 @@ var playerRad = 4;
 var gemRad = 15;
 var goalWidth = 100;
 
+// Shorthand for Matter components
+var Engine, World, Bodies;
+// Engine instance to run game
+var engine;
+
 // info about this player
 var player = {
 	name: "",
@@ -89,7 +94,16 @@ function setupSocket() {
 	}); 
 	
 	// Callback for start of play
-	socket.on("play", update);
+	socket.on("play", initializeGame);
+	
+	// Callback for receiving a new physics body from manager
+	socket.on("sendOrUpdateBody", function(data) {
+		console.log(data);
+		
+		// Create object with the data
+		var newObj = Bodies.rectangle(0, 0, 0, 0, data);
+		World.add(engine.world, newObj);
+	});
 	
 	// Callback for update from manager
 	socket.on("update", function(data) {
@@ -123,9 +137,6 @@ function setupSocket() {
 					opponent.grabbed = data.grabbed;
 				}
 				break;
-			case "gems":
-				gems = data.gems;
-				break;
 		}
 	});
 	
@@ -146,11 +157,11 @@ function setupSocket() {
 	// Callback for game end
 	socket.on("end", function(data) {
 		// player win
-		if (data.side == player.side) {
+		if (data.side === player.side) {
 			msgBox.innerHTML = player.name + " wins!";
 		}
 		// opponent win
-		else if (data.side == opponent.side){
+		else if (data.side === opponent.side){
 			msgBox.innerHTML = opponent.name + " wins!";
 		}
 		// tie
@@ -174,6 +185,26 @@ function setupSocket() {
 						
 		socket.emit('release', {pos: player.pos, grabbed: player.grabbed});
 	});
+}
+
+// FUNCTION: initializes game space (Matter)
+function initializeGame() {
+	
+	initializeMatter();
+	
+	// Begin update tick
+	update();
+}
+
+// FUNCTION: initializes Matter.js game world
+function initializeMatter() {
+	// create module aliases
+	Engine = Matter.Engine;
+	World = Matter.World;
+	Bodies = Matter.Bodies;
+		
+	// create an engine
+	engine = Engine.create();
 }
 
 // FUNCTION: update local game instance
