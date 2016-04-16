@@ -5,17 +5,17 @@
     margin: 0;
     padding: 0;
 }
+
 html, body {
     height: 100%;
     width: 100%;
+	background-color: black;
 }
 
 
 
 /* ALL PAGES */
 header {
-	z-index: 10;
-	width: 100%;
 	height: 150px;
 	padding-top: 40px;
 	background-color: #031003;
@@ -23,8 +23,9 @@ header {
 	font-size: 1.5em;
 	color: #003600;
 	text-shadow: 2px 2px 10px #09EC09;
-	box-shadow: 3px 0 20px -1px rgba(0, 0, 0, 0.75);
+	border-bottom: 1px solid #0B770B;
 }
+
 h1 {
 	font-family: 'Audiowide', arial, sans-serif;
 	font-size: 50px;
@@ -32,42 +33,51 @@ h1 {
 	padding: 10px 20px 0px;
 	margin-bottom: 0;
 }
+
 .column {
 	float: left;
 	height: calc(100% - 150px);
 }
+
 #navColumn {
 	height: 100%;
-	position: relative;
 	width: 20%;
 }
+
 #navColumn ul {
 	width: 100%;
 }
+
 #navColumn li {
 	padding: 15px;
 	height: 50px;
 	width: 100%;
 	background-color: #003600;
+	transition: background-color 0.3s ease-in-out;
 }
+
 #navColumn li:nth-child(even) {
 	background-color: #004500;
 }
+
 #navColumn li:hover {
 	cursor: pointer;
 	background-color: #0B770B;
 }
+
 #navColumn a {
 	text-decoration: none;
 	font-weight: bold;
 	color: #D6F2D6;
 }
+
 #chatWindow {
 	height: calc(80% - 120px);
 	background-color: #031003;
 	padding: 10px;
 	overflow-y: scroll;
 }
+
 #chatWindow p {
 	padding: 10px;
 	margin-top: 5px;
@@ -76,60 +86,96 @@ h1 {
 	color: #D6F2D6;
 	background-color: #0B770B;
 }
+
 #chatInput {
 	width: 100%;
 	height: calc(20% - 30px);
+	word-wrap: break-word;
 }
+
 #chatWindow p.userMsg {
 	text-align: right;
 	background-color: #600960;
 	color: #E8CDE8;
 }
+
 #chatWindow p.otherUserMsg {
 	background-color: #D6861A;
 	color: #FFF3E2;
 }
+
 a {
 	color: #0B770B;
 	font-weight: bold;
 	text-decoration: none;
 }
+
 a:hover {
 	text-decoration: underline;
 	color: #00DA00;
 }
 
+article {
+	width: 80%;
+	float: right;
+}
 
 
 /* LOGIN/SIGNUP FORMS */
-#login, #signup, #search, #errorMessage, nav {
+#userForm {
+	background-color: #031003;
+	height: 270px;
+    width: 400px;
+	margin: 0 auto;
+	margin-top: 200px;
 	text-align: center;
+	border: 1px solid #0B770B;
 }
-#search {
-	margin-top: 50px;
-}
-#search h3 {
-	margin-bottom: 20px;
-}
-.navlink {
-	display: inline;
-	padding: 10px;
-}
+
 nav {
-	margin: 200px 0 15px 0;
+	padding: 15px;
 }
-input {
-	margin-right: 15px;
-	height: 21px;
-	position: relative;
-	top: -1px;
+
+.navlink {
+	display: inline-block;
+	margin: 5px 10px;
+	padding: 10px 30px;
+	color: #D6F2D6;
+	background-color: #003600;
+	transition: background-color 0.3s ease-in-out;
 }
+
+.navlink:hover {
+	background-color: #0B770B;
+	color: #D6F2D6;
+	text-decoration: none;
+}
+
+.mainForm {
+    margin: 0 auto;
+}
+
 label {
+	display: inline-block;
+	height: 25px;
 	padding: 0 5px;
-	border: 1px solid rgb(170, 170, 170);
-	border-right: none;
-	background-color: rgb(250, 250, 250);
+	margin-bottom: 15px;
+	color: #D6F2D6;
+	font-weight: bold;
 }
+
+#user, #pass, #pass2 {
+    text-align: center;
+	height: 25px;
+    width: 180px;
+	margin-bottom: 15px;
+}
+
+#user:focus, #pass:focus, #pass2:focus {
+    outline: none;
+    box-shadow: 0px 0px 1px 1px #00DA00;
+}
+
 #errorMessage {
 	margin-top: 30px;
 	color: red;
@@ -148,26 +194,33 @@ label {
 	z-index: 1;
 	box-shadow: 0 0 25px rgb(200, 200, 200);
 }
+
 #userInfo h1 {
 	margin-bottom: 20px;
 }
+
 #userInfo p {
 	font-size: 1.15em;
 }
+
 .userStats {
 	width: 500px;
 	background-color: rgb(230, 230, 230);
 	padding: 10px;
 }
+
 .userStats:nth-child(odd) {
 	background-color: rgb(240, 240, 240);
 }
+
 span.statistic {
 	float: right;
 }
+
 #renamePlayer {
 	margin-top: 20px;
 }
+
 #renamePlayer p {
 	margin-bottom: 10px;
 }
@@ -180,10 +233,12 @@ canvas {
 	background-size: cover;
 	margin-top: -20px;
 }
+
 #canvasContainer {
 	width: 100%;
 	text-align: center;
 }
+
 #serverInfo {
 	position: relative;
 	top: 25px;
@@ -197,17 +252,21 @@ canvas {
 	margin-left: 20%;
 	padding: 20px;
 }
+
 #onlineUsersContainer h2 {
 	margin-bottom: 15px;
 }
+
 #onlineUsersList {
 	width: 100%;
 }
+
 #onlineUsersList li {
 	list-style: none;
 	padding: 10px;
 	background-color: rgb(240, 240, 240);
 }
+
 #onlineUsersList li:nth-child(odd) {
 	background-color: rgb(230, 230, 230);
 }

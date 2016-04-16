@@ -1,21 +1,23 @@
 extends ./base.jade
 block append content
-  nav
-    .navlink
-      a(href="/login") Login
-    .navlink
-      a(href="/signup") Sign up
-  section#signup
-    form#signupForm(class="mainForm", name="signupForm", action="/signup", method="POST")
-      label(for="username") Username: 
-      input#user(type="text", name="username", placeholder="username")
-      label(for="pass") Password: 
-      input#pass(type="password", name="pass", placeholder="password")
-      label(for="pass2") Password: 
-      input#pass2(type="password", name="pass2", placeholder="retype password")
-      input(type="hidden", name="_csrf", value="#{csrfToken}")
-      a#signupSubmit(class="formSubmit", href="#") Sign up
-  section
-    h2#errorMessage
+  article
+    #userForm
+      nav
+        a.navlink(href="/login") Login
+        a.navlink(href="/signup") Sign up
+      form#signupForm(class="mainForm", name="signupForm", action="/signup", method="POST")
+        label(for="username") Username: 
+        input#user(type="text", name="username", placeholder="username")
+        <br />
+        label(for="pass") Password: 
+        input#pass(type="password", name="pass", placeholder="password")
+        <br />
+        label(for="pass2") Password: 
+        input#pass2(type="password", name="pass2", placeholder="retype password")
+        <br />
+        input(type="hidden", name="_csrf", value="#{csrfToken}")
+        a#signupSubmit(class="navlink", href="#") Sign up
+      section
+        h2#errorMessage
 block scripts
   script(src="/assets/client.js")
