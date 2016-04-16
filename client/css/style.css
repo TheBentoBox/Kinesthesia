@@ -8,7 +8,6 @@
 html, body {
     height: 100%;
     width: 100%;
-    overflow-x: hidden;
 }
 
 
@@ -19,16 +18,17 @@ header {
 	width: 100%;
 	height: 150px;
 	padding-top: 40px;
-	background-color: rgb(65, 175, 215);
+	background-color: #031003;
 	text-align: center;
 	font-size: 1.5em;
-	color: white;
-	text-shadow: 0 0 20px rgb(15, 60, 100);
+	color: #003600;
+	text-shadow: 2px 2px 10px #09EC09;
 	box-shadow: 3px 0 20px -1px rgba(0, 0, 0, 0.75);
 }
 h1 {
 	font-family: 'Audiowide', arial, sans-serif;
-	font-size: 35px;
+	font-size: 50px;
+	font-weight: bold;
 	padding: 10px 20px 0px;
 	margin-bottom: 0;
 }
@@ -48,23 +48,23 @@ h1 {
 	padding: 15px;
 	height: 50px;
 	width: 100%;
-	background-color: rgb(215, 215, 215);
+	background-color: #003600;
 }
 #navColumn li:nth-child(even) {
-	background-color: rgb(225, 225, 225);
+	background-color: #004500;
 }
 #navColumn li:hover {
 	cursor: pointer;
-	background-color: rgb(245, 245, 245);
+	background-color: #0B770B;
 }
 #navColumn a {
 	text-decoration: none;
 	font-weight: bold;
-	color: black;
+	color: #D6F2D6;
 }
 #chatWindow {
 	height: calc(80% - 120px);
-	background-color: rgb(230, 230, 230);
+	background-color: #031003;
 	padding: 10px;
 	overflow-y: scroll;
 }
@@ -73,7 +73,8 @@ h1 {
 	margin-top: 5px;
 	border-radius: 1em;
 	word-wrap: break-word;
-	background-color: white;
+	color: #D6F2D6;
+	background-color: #0B770B;
 }
 #chatInput {
 	width: 100%;
@@ -81,21 +82,21 @@ h1 {
 }
 #chatWindow p.userMsg {
 	text-align: right;
-	background-color: rgb(150, 75, 75);
-	color: white;
+	background-color: #600960;
+	color: #E8CDE8;
 }
 #chatWindow p.otherUserMsg {
-	background-color: rgb(30, 75, 150);
-	color: white;
+	background-color: #D6861A;
+	color: #FFF3E2;
 }
 a {
-	color: rgb(50, 100, 200);
+	color: #0B770B;
 	font-weight: bold;
 	text-decoration: none;
 }
 a:hover {
 	text-decoration: underline;
-	color: rgb(25, 50, 250);
+	color: #00DA00;
 }
 
 
