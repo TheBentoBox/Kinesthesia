@@ -60,28 +60,18 @@ function clamp(value, min, max) {
 
 // FUNCTION: connect socket and setup callbacks
 function setupSocket() {
-	// grab and connect socket
-	socket = io.connect();
+
+	// Connect to socket.io
+	// The io variable is a global var from the socket.io script above
+	socket = (socket || io.connect());
+	socket.emit("userdata", userdata);
 	
-	// callback for server messages
-	socket.on("msg", function(data) {
-		msgBox.innerHTML = data.msg;
-	});
-	
-	// callback for user connection
+	// Listener for user connection event
 	socket.on("connect", function(){
-		// connection feedback
-		msgBox.innerHTML = "Connecting...";
+		console.log("Connecting...");
 		
-		// grab username from input and send to server
-		player.name = document.querySelector("#usernameInput").value;
-		
-		// generate generic username if none is input
-		if (!player.name || player.name === "") {
-			player.name = "Player" + Math.floor(Math.random()*1000);
-		}
-		
-		socket.emit("join", { name: player.name });
+		socket.emit("join", userdata);
+		socket.emit("sendId", { id: userdata._id });
 	});
 	
 	// Callback for successful join
@@ -177,6 +167,13 @@ function setupSocket() {
 		}
 	});
 	
+	// Listen for game completion events, which let us know the game
+	// is over and whether we won or lost. Updates statistics.
+	socket.on("gameComplete", function(data) {
+		data._csrf = $("#token").val();
+		sendAjax("/updateStats", data);
+	});
+	
 	// setup canvas mouse down behavior
 	/*
 	canvas.addEventListener('mousedown', function(e) {
@@ -215,7 +212,7 @@ function initializeMatter() {
 	// create an engine
 	engine = Engine.create({
 		render: {
-			element: document.body,
+			element: document.querySelector('#canvasContainer'),
 			controller: Matter.RenderPixi
 		}
 	});
@@ -245,11 +242,7 @@ function update() {
 
 // FUNCTION: setup page
 function init() {
-	// grab feedback box
-	msgBox = document.querySelector("#msgBox");
-	
-	// add callback for connect button
-	document.querySelector("#connectBut").addEventListener('click', setupSocket);
+	setupSocket();
 }
 
 window.onload = init;

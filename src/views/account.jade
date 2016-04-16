@@ -1,0 +1,27 @@
+extends ./base.jade
+
+block append content
+  section#userInfo.column
+    if !stats
+      h3 There are no stats tied to your account
+    else
+      h1 Greetings, #{stats.username}!
+      p Here's an overview of your game statistics:
+      br
+      p.userStats #[strong Played]: #[span.statistic #{stats.gamesPlayed}]
+      p.userStats #[strong Won]: #[span.statistic #{stats.gamesWon}]
+      p.userStats #[strong Lost]: #[span.statistic #{stats.gamesLost}]
+      p.userStats #[strong % Wins]: #[span.statistic#pctWin]
+      p.userStats #[strong % Losses]: #[span.statistic#pctLoss]
+      p.userStats #[strong Win-Loss Ratio]: #[span.statistic#winLossRatio]
+
+      div#renamePlayer
+          p Update your username:
+          form#renameForm(name="renameForm", action="/renamePlayer", method="POST")
+              label(for="name") New Name
+              input#newName(type="text", name="name", placeholder="#{stats.username}")
+              input(type="hidden", name="_csrf", value="#{csrfToken}")
+              a#renameSubmit(href="#") Submit
+  
+block append scripts
+  script(src="/assets/accountStats.js")

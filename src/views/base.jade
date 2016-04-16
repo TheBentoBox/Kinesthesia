@@ -1,9 +1,39 @@
 html(lang="en")
-	head
-		meta(charset="utf-8")
-		title Kinsthesia
-		script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js")
-		link(rel="shortcut icon", href="/assets/images/gem.png")
-		block style
-	block body
-	block scripts
+
+  block head
+    meta(charset="utf-8")
+    title Kinsthesia
+    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js")
+    link(rel="shortcut icon", href="/assets/images/gem.png")
+    link(rel="stylesheet", type="text/css", href='https://fonts.googleapis.com/css?family=Roboto')
+  
+  block style
+      link(rel="stylesheet", type="text/css", href="/assets/css/style.css")
+    
+  block body
+    section#navColumn.column
+      ul
+        li
+          a(href="/account") My Account
+        li
+          a(href="/game") Play Game
+        li
+          a(href="/usersOnline") Online Users
+      div#chatWindow
+        p You are not logged in.
+      input#chatInput(type="text", placeholder="Type here to chat")
+    
+    block content
+      header
+        h1 Kinesthesia
+    
+  block scripts
+    script(src="/assets/chat.js")
+    script(src="/assets/sendAjax.js")
+    script(src="/socket.io/socket.io.js")
+    script(type='text/javascript').
+      var userdata = (!{JSON.stringify({stats})}).stats
+      if ("#{stats.username}" != "undefined")
+        userdata.username = "!{stats.username}"
+      Object.freeze(userdata)
+      var socket;

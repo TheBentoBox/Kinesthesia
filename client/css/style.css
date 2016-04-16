@@ -1,0 +1,212 @@
+/* GLOBAL */
+* {
+	font-family: 'Roboto', sans-serif;
+	box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+
+
+/* ALL PAGES */
+header {
+	z-index: 10;
+	width: 100%;
+	height: 150px;
+	padding-top: 40px;
+	background-color: rgb(65, 175, 215);
+	text-align: center;
+	font-size: 1.5em;
+	color: white;
+	text-shadow: 0 0 20px rgb(15, 60, 100);
+	box-shadow: 3px 0 20px -1px rgba(0, 0, 0, 0.75);
+}
+h1 {
+	font-family: 'Audiowide', arial, sans-serif;
+	font-size: 35px;
+	padding: 10px 20px 0px;
+	margin-bottom: 0;
+}
+.column {
+	float: left;
+	height: calc(100% - 150px);
+}
+#navColumn {
+	height: 100%;
+	position: relative;
+	width: 20%;
+}
+#navColumn ul {
+	width: 100%;
+}
+#navColumn li {
+	padding: 15px;
+	height: 50px;
+	width: 100%;
+	background-color: rgb(215, 215, 215);
+}
+#navColumn li:nth-child(even) {
+	background-color: rgb(225, 225, 225);
+}
+#navColumn li:hover {
+	cursor: pointer;
+	background-color: rgb(245, 245, 245);
+}
+#navColumn a {
+	text-decoration: none;
+	font-weight: bold;
+	color: black;
+}
+#chatWindow {
+	height: calc(80% - 120px);
+	background-color: rgb(230, 230, 230);
+	padding: 10px;
+	overflow-y: scroll;
+}
+#chatWindow p {
+	padding: 10px;
+	margin-top: 5px;
+	border-radius: 1em;
+	word-wrap: break-word;
+	background-color: white;
+}
+#chatInput {
+	width: 100%;
+	height: calc(20% - 30px);
+}
+#chatWindow p.userMsg {
+	text-align: right;
+	background-color: rgb(150, 75, 75);
+	color: white;
+}
+#chatWindow p.otherUserMsg {
+	background-color: rgb(30, 75, 150);
+	color: white;
+}
+a {
+	color: rgb(50, 100, 200);
+	font-weight: bold;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+	color: rgb(25, 50, 250);
+}
+
+
+
+/* LOGIN/SIGNUP FORMS */
+#login, #signup, #search, #errorMessage, nav {
+	text-align: center;
+}
+#search {
+	margin-top: 50px;
+}
+#search h3 {
+	margin-bottom: 20px;
+}
+.navlink {
+	display: inline;
+	padding: 10px;
+}
+nav {
+	margin: 200px 0 15px 0;
+}
+input {
+	margin-right: 15px;
+	height: 21px;
+	position: relative;
+	top: -1px;
+}
+label {
+	padding: 0 5px;
+	border: 1px solid rgb(170, 170, 170);
+	border-right: none;
+	background-color: rgb(250, 250, 250);
+}
+#errorMessage {
+	margin-top: 30px;
+	color: red;
+	font-weight: bold;
+}
+
+
+
+/* ACCOUNT PAGE */
+#userInfo {
+	width: 80%;
+	padding: 20px;
+	padding-left: 30px;
+	background-color: rgb(250, 250, 250);
+	position: relative;
+	z-index: 1;
+	box-shadow: 0 0 25px rgb(200, 200, 200);
+}
+#userInfo h1 {
+	margin-bottom: 20px;
+}
+#userInfo p {
+	font-size: 1.15em;
+}
+.userStats {
+	width: 500px;
+	background-color: rgb(230, 230, 230);
+	padding: 10px;
+}
+.userStats:nth-child(odd) {
+	background-color: rgb(240, 240, 240);
+}
+span.statistic {
+	float: right;
+}
+#renamePlayer {
+	margin-top: 20px;
+}
+#renamePlayer p {
+	margin-bottom: 10px;
+}
+
+
+
+/* GAME PAGE */
+canvas {
+	background-image: url("img/background.png");
+	background-size: cover;
+	margin-top: -20px;
+}
+#canvasContainer {
+	width: 100%;
+	text-align: center;
+}
+#serverInfo {
+	position: relative;
+	top: 25px;
+	text-align: center;
+}
+
+
+
+/* ONLINE USERS LIST PAGE */
+#onlineUsersContainer {
+	margin-left: 20%;
+	padding: 20px;
+}
+#onlineUsersContainer h2 {
+	margin-bottom: 15px;
+}
+#onlineUsersList {
+	width: 100%;
+}
+#onlineUsersList li {
+	list-style: none;
+	padding: 10px;
+	background-color: rgb(240, 240, 240);
+}
+#onlineUsersList li:nth-child(odd) {
+	background-color: rgb(230, 230, 230);
+}

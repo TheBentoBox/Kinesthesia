@@ -1,15 +1,11 @@
 extends ./base.jade
-block append style
-	link(rel="stylesheet", type="text/css", href="/assets/css/gameStyle.css")
-block body
-	h1 Kinesthesia
-	p#msgBox Enter a username to connect
-	#connectForm
-		label(for="user") Username:
-		input#usernameInput(name="user", type="text")
-		input#connectBut(type="button" value="Connect")
-block scripts
-	script(src="/socket.io/socket.io.js")
-	script(src="/assets/matter.min.js")
-	script(src="/assets/pixi.min.js")
-	script(src="/assets/kinesthesia.js")
+
+block append content
+  h3#serverInfo Waiting for game to start
+  div#canvasContainer
+  input#token(type="hidden", name="_csrf", value="#{csrfToken}")
+
+block append scripts
+  script(src="/assets/matter.min.js")
+  script(src="/assets/pixi.min.js")
+  script(src="/assets/kinesthesia.js")

@@ -1,0 +1,8 @@
+extends ./base.jade
+block append content
+  section#onlineUsersContainer
+    h2 Users Online:
+    ul#onlineUsersList
+      li Loading user list...
+block append scripts
+  script(src="/assets/userList.js")

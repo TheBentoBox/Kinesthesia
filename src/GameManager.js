@@ -8,6 +8,7 @@ var InputManager = require("./InputManager.js");
 // CLASS: handles an instance of Kinesthesia
 class GameManager {
 	constructor(io, roomName, player1, player2) {
+		
 		// Initalize class variables
 		this.io = io;
 		this.room = roomName;
