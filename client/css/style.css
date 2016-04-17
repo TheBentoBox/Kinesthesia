@@ -118,6 +118,8 @@ a:hover {
 article {
 	width: 80%;
 	float: right;
+	text-align: center;
+	color: #D6F2D6;
 }
 
 
@@ -185,18 +187,9 @@ label {
 
 
 /* ACCOUNT PAGE */
-#userInfo {
-	width: 80%;
-	padding: 20px;
-	padding-left: 30px;
-	background-color: rgb(250, 250, 250);
-	position: relative;
-	z-index: 1;
-	box-shadow: 0 0 25px rgb(200, 200, 200);
-}
-
 #userInfo h1 {
 	margin-bottom: 20px;
+	font-size: 30px;
 }
 
 #userInfo p {
@@ -204,13 +197,15 @@ label {
 }
 
 .userStats {
-	width: 500px;
-	background-color: rgb(230, 230, 230);
+	width: 450px;
+	background-color: #003600;
 	padding: 10px;
+	margin: 0 auto;
+	text-align: left;
 }
 
 .userStats:nth-child(odd) {
-	background-color: rgb(240, 240, 240);
+	background-color: #004500;
 }
 
 span.statistic {
@@ -243,13 +238,13 @@ canvas {
 	position: relative;
 	top: 25px;
 	text-align: center;
+	color: #D6F2D6;
 }
 
 
 
 /* ONLINE USERS LIST PAGE */
 #onlineUsersContainer {
-	margin-left: 20%;
 	padding: 20px;
 }
 
@@ -258,15 +253,16 @@ canvas {
 }
 
 #onlineUsersList {
-	width: 100%;
+	margin: 0 auto;
+	width: 40%;
 }
 
 #onlineUsersList li {
 	list-style: none;
 	padding: 10px;
-	background-color: rgb(240, 240, 240);
+	background-color: #003600;
 }
 
 #onlineUsersList li:nth-child(odd) {
-	background-color: rgb(230, 230, 230);
+	background-color: #004500;
 }

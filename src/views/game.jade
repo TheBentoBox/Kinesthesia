@@ -1,9 +1,10 @@
 extends ./base.jade
 
 block append content
-  h3#serverInfo Waiting for game to start
-  div#canvasContainer
-  input#token(type="hidden", name="_csrf", value="#{csrfToken}")
+  article
+    h3#serverInfo Waiting for game to start
+    div#canvasContainer
+    input#token(type="hidden", name="_csrf", value="#{csrfToken}")
 
 block append scripts
   script(src="/assets/matter.min.js")
