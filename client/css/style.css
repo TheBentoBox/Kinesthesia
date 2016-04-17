@@ -81,38 +81,50 @@ h1 {
 #chatWindow p {
 	padding: 10px;
 	margin-top: 5px;
-	border-radius: 1em;
 	word-wrap: break-word;
 	color: #D6F2D6;
 	background-color: #0B770B;
+	font-family: courier;
+}
+
+#chatWindow strong {
+	font-family: courier;
+	font-weight: bold;
+}
+
+#chatWindow a {
+	font-family: courier;
+	color: #09EC09;
+	font-weight: bold;
 }
 
 #chatInput {
 	width: 100%;
+	padding: 10px;
 	height: calc(20% - 30px);
-	word-wrap: break-word;
+	background-color: black;
+	color: #09EC09;
+	font-family: courier;
+	border: 1px solid #0B770B;
+}
+
+#chatInput:focus {
+	outline: none;
+	border: 1px solid #00DA00;
+	box-shadow: 0px 0px 1px 1px #00DA00;
 }
 
 #chatWindow p.userMsg {
 	text-align: right;
 	background-color: #600960;
 	color: #E8CDE8;
+	font-family: courier;
 }
 
 #chatWindow p.otherUserMsg {
 	background-color: #D6861A;
 	color: #FFF3E2;
-}
-
-a {
-	color: #0B770B;
-	font-weight: bold;
-	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
-	color: #00DA00;
+	font-family: courier;
 }
 
 article {
