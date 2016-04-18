@@ -86,20 +86,33 @@ function setupSocket() {
 	// Callback for start of play
 	socket.on("play", initializeGame);
 	
+	socket.on("clearBodies", function(data) {
+		World.clear(engine.world, true);
+	})
+	
 	// Callback for receiving a new physics body from manager
 	socket.on("sendOrUpdateBody", function(data) {
-		// Create new basic physics object
-		var newObj = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
-		delete data.position;
-		delete data.bounds;
 		
-		// Apply all the passed data properties to the new object
-		for (var i = 0; i < Object.keys(data).length; ++i) {
-			newObj[Object.keys(data)[i]] = data[Object.keys(data)[i]];
+		// Find the object in the world to update
+		var objToMakeOrUpdate = Matter.Composite.get(engine.world, data.id, "body");
+		var objectIsNew = (objToMakeOrUpdate == null);
+		
+		// if we didn't find it, then this object is new - make a new one to add its properties to
+		if (objectIsNew) {
+			// we need to manually create it with the proper position and bounds
+			// this makes matter correctly calculate its weight, volume, etc. phys properties
+			objToMakeOrUpdate = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
+			delete data.bounds;
+			Matter.Body.set(objToMakeOrUpdate, data);
+			
+			objToMakeOrUpdate.id = data.id;
+			
+			// since it's new, we need to add it to the world
+			World.add(engine.world, objToMakeOrUpdate);
 		}
-		
-		// Add the object to the world
-		World.add(engine.world, newObj);
+		else {
+			Matter.Body.set(objToMakeOrUpdate, data);
+		}
 	});
 	
 	// Callback for update from manager
@@ -173,30 +186,13 @@ function setupSocket() {
 		data._csrf = $("#token").val();
 		sendAjax("/updateStats", data);
 	});
-	
-	// setup canvas mouse down behavior
-	/*
-	canvas.addEventListener('mousedown', function(e) {
-		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
-		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
-		
-		socket.emit('click', {pos: player.pos});
-	});
-	
-	// setup canvas mouse up behavior
-	document.addEventListener('mouseup', function(e) {
-		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
-		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
-						
-		socket.emit('release', {pos: player.pos, grabbed: player.grabbed});
-	});
-	*/
 }
 
 // FUNCTION: initializes game space (Matter)
 function initializeGame() {
 	
 	initializeMatter();
+	initializeInput();
 	
 	// Begin update tick
 	setTimeout(update, 100);
@@ -213,7 +209,24 @@ function initializeMatter() {
 	engine = Engine.create({
 		render: {
 			element: document.querySelector('#canvasContainer'),
-			controller: Matter.RenderPixi
+			controller: Matter.RenderPixi,
+			options: {
+				width: 1200,
+				height: 640,
+				wireframes: false,
+				background: "#222",
+				enabled: false,
+				showDebug: true,
+				showBroadphase: true,
+				showBounds: true,
+				showVelocity: true,
+				showCollisions: true,
+				showAxes: true,
+				showPositions: true,
+				showAngleIndicator: true,
+				showIds: true,
+				showShadows: true
+			}
 		}
 	});
 	
@@ -228,7 +241,32 @@ function initializeMatter() {
 		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
 	});
 	
-	setTimeout(Engine.run, 100, engine);
+	Matter.Runner.run(engine);
+}
+
+// FUNCTION: sets up user input for using abilities
+function initializeInput() {
+	// setup canvas mouse down behavior
+	canvas.addEventListener('mousedown', function(e) {
+		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
+		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
+		
+		//for (var i = 0; i < engine.world.bodies.length; ++i) {
+		//	if ((player.pos.x - engine.world.bodies[i].position.x < 5) && (player.pos.y - engine.world.bodies[i].position.y < 5)) {
+		//		console.log(engine.world.bodies[i]);
+		//	}
+		//}
+		
+		socket.emit('click', {pos: player.pos});
+	});
+	
+	// setup canvas mouse up behavior
+	document.addEventListener('mouseup', function(e) {
+		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
+		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
+						
+		socket.emit('release', {pos: player.pos, grabbed: player.grabbed});
+	});
 }
 
 // FUNCTION: update local game instance
@@ -236,16 +274,16 @@ function update() {
 	// emit player position
 	socket.emit("update", {pos: player.pos})
 	
+	for (var i = 0; i < engine.world.bodies.length; ++i) {
+		ctx.fillStyle="white";
+		ctx.fillText(engine.world.bodies[i].angularVelocity, engine.world.bodies.position.x, engine.world.bodies.position.y);
+	}
+	
 	// request next frame
 	requestAnimationFrame(update);
 }
 
-// FUNCTION: setup page
-function init() {
-	setupSocket();
-}
-
-window.onload = init;
+window.onload = setupSocket;
 
 })();
 // end game IIFE

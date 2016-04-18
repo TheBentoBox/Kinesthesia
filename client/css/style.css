@@ -238,7 +238,6 @@ span.statistic {
 canvas {
 	background-image: url("img/background.png");
 	background-size: cover;
-	margin-top: -20px;
 }
 
 #canvasContainer {

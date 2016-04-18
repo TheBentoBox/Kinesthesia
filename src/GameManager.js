@@ -4,6 +4,7 @@
 
 var Matter = require("matter-js");
 var InputManager = require("./InputManager.js");
+var objects;
 
 // CLASS: handles an instance of Kinesthesia
 class GameManager {
@@ -26,8 +27,8 @@ class GameManager {
 		
 		// Set screen size
 		this.screen = {
-			x: 800,
-			y: 600
+			x: 1200,
+			y: 640
 		};
 		
 		// Setup Matter for physics
@@ -105,33 +106,51 @@ class GameManager {
 		this.io.sockets.in(this.room).emit("play");
 		
 		// now that play has begun, send the world bodies
-		this.emitGems();
+		this.emitBodies();
+		
+		// begin the update loop
+		setInterval(this.loop.bind(this), 1000/30);
+	}
+	
+	
+	loop() {
+		this.emitBodies();
+		this.Engine.update(this.engine, 1000/30);
 	}
 	
 	
 	// Process a Matter body and returns a slimmed down version of it
 	processBody(physBody) {
 		return {
-			id: physBody.id,
 			angle: physBody.angle,
-			position: physBody.position,
-			force: physBody.force,
-			torque: physBody.torque,
-			speed: physBody.speed,
-			angularSpeed: physBody.angularSpeed,
-			velocity: physBody.velocity,
-			angularVelocity: physBody.velocity,
-			isSleeping: physBody.isSleeping,
+			angularVelocity: physBody.angularVelocity,
 			bounds: physBody.bounds,
-			positionPrev: physBody.positionPrev,
-			anglePrev: physBody.anglePrev,
-			isStatic: physBody.isStatic
+			density: physBody.density,
+			id: physBody.id,
+			inertia: physBody.inertia,
+			isSleeping: physBody.isSleeping,
+			isStatic: physBody.isStatic,
+			mass: physBody.mass,
+			position: physBody.position,
+			velocity: physBody.velocity,
+			render: physBody.render
 		}
 	}
 	
 	
-	emitGems() {
+	add(obj) {
+		this.World.add(this.engine.world, [obj]);
+		this.io.sockets.in(this.room).emit(
+			"sendOrUpdateBody",
+			this.processBody(obj)
+		);
+	}
+	
+	
+	emitBodies() {
+		
 		for (var i = 0; i < this.engine.world.bodies.length; ++i) {
+			if (this.engine.world.bodies[i] != undefined)
 			this.io.sockets.in(this.room).emit(
 				"sendOrUpdateBody",
 				this.processBody(this.engine.world.bodies[i])
@@ -145,13 +164,19 @@ class GameManager {
 		this.Engine = Matter.Engine;
 		this.World = Matter.World;
 		this.Bodies = Matter.Bodies;
+		this.Body = Matter.Body;
 			
 		// create an engine
 		this.engine = this.Engine.create();
 		
 		// create the ground and add it to the world
-		this.ground = this.Bodies.rectangle(this.screen.x/2, this.screen.y - 20, this.screen.x, 20, { isStatic: true });
-		this.World.add(this.engine.world, [this.ground]);
+		var ground = this.Bodies.rectangle(this.screen.x/2, this.screen.y + 50, this.screen.x*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
+		var p1Wall = this.Bodies.rectangle(150, this.screen.y - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
+		var p2Wall = this.Bodies.rectangle(this.screen.x - 150, this.screen.y - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: "#600960" }});
+		this.World.add(this.engine.world, [ground, p1Wall, p2Wall]);
+		
+		// alias
+		objects = this.engine.world.bodies;
 	}
 	
 	// Callback for user update
