@@ -68,7 +68,7 @@ app.use(session({
 }));
 app.set('view engine', 'jade');
 app.set('views', __dirname + '/views');
-app.use(favicon(__dirname + '/../client/images/gem.png'));
+app.use(favicon(__dirname + '/../client/images/favicon.png'));
 app.disable('x-powered-by');
 app.use(cookieParser());
 
