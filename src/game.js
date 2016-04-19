@@ -18,7 +18,7 @@ var csrf = require('csurf');
 var router = require('./router.js');
 
 // Get database URL
-var dbURL = process.env.MONGOLAB_URI || "mongodb://localhost/AirHockey";
+var dbURL = process.env.MONGODB_URI || "mongodb://localhost/AirHockey";
 
 // Connect to the database
 var db = mongoose.connect(dbURL, function(err) {
