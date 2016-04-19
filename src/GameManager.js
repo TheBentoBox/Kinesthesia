@@ -114,23 +114,19 @@ class GameManager {
 	
 	
 	loop() {
-		this.emitBodies();
 		this.Engine.update(this.engine, 1000/30);
+		this.emitBodies();
 	}
 	
 	
 	// Process a Matter body and returns a slimmed down version of it
 	processBody(physBody) {
 		return {
-			angle: physBody.angle,
-			angularVelocity: physBody.angularVelocity,
-			bounds: physBody.bounds,
-			density: physBody.density,
-			id: physBody.id,
-			inertia: physBody.inertia,
-			isSleeping: physBody.isSleeping,
+			label: physBody.label,
 			isStatic: physBody.isStatic,
-			mass: physBody.mass,
+			angle: physBody.angle,
+			bounds: physBody.bounds,
+			id: physBody.id,
 			position: physBody.position,
 			velocity: physBody.velocity,
 			render: physBody.render
@@ -139,6 +135,7 @@ class GameManager {
 	
 	
 	add(obj) {
+		
 		this.World.add(this.engine.world, [obj]);
 		this.io.sockets.in(this.room).emit(
 			"sendOrUpdateBody",
@@ -150,7 +147,7 @@ class GameManager {
 	emitBodies() {
 		
 		for (var i = 0; i < this.engine.world.bodies.length; ++i) {
-			if (this.engine.world.bodies[i] != undefined)
+			if (this.engine.world.bodies[i] != undefined && this.engine.world.bodies[i].isSleeping == false)
 			this.io.sockets.in(this.room).emit(
 				"sendOrUpdateBody",
 				this.processBody(this.engine.world.bodies[i])

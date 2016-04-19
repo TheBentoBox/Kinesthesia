@@ -30,10 +30,10 @@ class InputManager {
 	onRelease(socket) {
 		socket.on("release", function(data) {
 			
-			var newBody = this.Manager.Bodies.rectangle(data.pos.x, data.pos.y, 15, 15);
+			var newBody = this.Manager.Bodies.circle(socket.lastClick.x, socket.lastClick.y, 15);
 			var vel = {
-					x: socket.lastClick.x - data.pos.x,
-					y: socket.lastClick.y - data.pos.y
+					x: Math.min(30, Math.abs(socket.lastClick.x - data.pos.x)) * Math.sign(socket.lastClick.x - data.pos.x),
+					y: Math.min(30, Math.abs(socket.lastClick.y - data.pos.y)) * Math.sign(socket.lastClick.y - data.pos.y)
 				};
 			this.Manager.Body.setVelocity(newBody, vel);
 			

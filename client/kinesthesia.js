@@ -101,7 +101,15 @@ function setupSocket() {
 		if (objectIsNew) {
 			// we need to manually create it with the proper position and bounds
 			// this makes matter correctly calculate its weight, volume, etc. phys properties
-			objToMakeOrUpdate = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
+			switch(data.label) {
+				case "Circle Body":
+						objToMakeOrUpdate = Bodies.circle(data.position.x, data.position.y, (data.bounds.max.x - data.bounds.min.x)/2);
+						break;
+				default:
+						objToMakeOrUpdate = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
+						break;
+			}
+			
 			delete data.bounds;
 			Matter.Body.set(objToMakeOrUpdate, data);
 			
@@ -273,11 +281,6 @@ function initializeInput() {
 function update() {
 	// emit player position
 	socket.emit("update", {pos: player.pos})
-	
-	for (var i = 0; i < engine.world.bodies.length; ++i) {
-		ctx.fillStyle="white";
-		ctx.fillText(engine.world.bodies[i].angularVelocity, engine.world.bodies.position.x, engine.world.bodies.position.y);
-	}
 	
 	// request next frame
 	requestAnimationFrame(update);
