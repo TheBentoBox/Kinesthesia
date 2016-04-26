@@ -19,9 +19,12 @@ var msgBox;
 var playerRad = 4;
 var gemRad = 15;
 var goalWidth = 100;
+var IS_HOST = false;
+var lastClick = {};
+var SLEEPING_CACHE = {};
 
 // Shorthand for Matter components
-var Engine, World, Bodies;
+var Engine, World, Bodies, Body;
 // Engine instance to run game
 var engine;
 
@@ -49,8 +52,6 @@ var opponent = {
 	score: 0
 };
 
-// gems on the field
-var gems = [];
 //} GAME VARS
 
 // FUNCTION: clamp value between min and max
@@ -74,6 +75,13 @@ function setupSocket() {
 		socket.emit("sendId", { id: userdata._id });
 	});
 	
+	
+	
+	// Listens for notifaction from the server that we're the host of the game
+	socket.on("notifyHost", function() {
+		IS_HOST = true;
+	});
+	
 	// Callback for successful join
 	socket.on("joined", function(data) {
 		// join feedback
@@ -86,19 +94,20 @@ function setupSocket() {
 	// Callback for start of play
 	socket.on("play", initializeGame);
 	
+	// Removes all bodies from the game world
 	socket.on("clearBodies", function(data) {
 		World.clear(engine.world, true);
 	})
 	
 	// Callback for receiving a new physics body from manager
 	socket.on("sendOrUpdateBody", function(data) {
-		
 		// Find the object in the world to update
 		var objToMakeOrUpdate = Matter.Composite.get(engine.world, data.id, "body");
 		var objectIsNew = (objToMakeOrUpdate == null);
 		
 		// if we didn't find it, then this object is new - make a new one to add its properties to
 		if (objectIsNew) {
+			
 			// we need to manually create it with the proper position and bounds
 			// this makes matter correctly calculate its weight, volume, etc. phys properties
 			switch(data.label) {
@@ -110,7 +119,6 @@ function setupSocket() {
 						break;
 			}
 			
-			delete data.bounds;
 			Matter.Body.set(objToMakeOrUpdate, data);
 			
 			objToMakeOrUpdate.id = data.id;
@@ -120,8 +128,6 @@ function setupSocket() {
 		}
 		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
-			var vel = objToMakeOrUpdate.velocity.x + "x " + objToMakeOrUpdate.velocity.y + "y";
-			Matter.Body.update(objToMakeOrUpdate, new Date().getTime() - data.time, 1, 1);
 		}
 	});
 	
@@ -204,8 +210,18 @@ function initializeGame() {
 	initializeMatter();
 	initializeInput();
 	
+	if (IS_HOST) {
+		var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
+		var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
+		var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: "#600960" }});
+		World.add(engine.world, [ground, p1Wall, p2Wall]);
+		
+		setupWorld();
+	}
+	
 	// Begin update tick
 	setTimeout(update, 100);
+	setInterval(emitBodies, 1000/20);
 }
 
 // FUNCTION: initializes Matter.js game world
@@ -214,6 +230,7 @@ function initializeMatter() {
 	Engine = Matter.Engine;
 	World = Matter.World;
 	Bodies = Matter.Bodies;
+	Body = Matter.Body;
 		
 	// create an engine
 	engine = Engine.create({
@@ -252,13 +269,7 @@ function initializeInput() {
 		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
 		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
 		
-		//for (var i = 0; i < engine.world.bodies.length; ++i) {
-		//	if ((player.pos.x - engine.world.bodies[i].position.x < 5) && (player.pos.y - engine.world.bodies[i].position.y < 5)) {
-		//		console.log(engine.world.bodies[i]);
-		//	}
-		//}
-		
-		socket.emit('click', {pos: player.pos});
+		lastClick = { x: player.pos.x, y: player.pos.y };
 	});
 	
 	// setup canvas mouse up behavior
@@ -266,14 +277,79 @@ function initializeInput() {
 		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
 		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
 						
-		socket.emit('release', {pos: player.pos, grabbed: player.grabbed});
+		// make sure lastClick has been declared, otherwise declare and bail out
+		if (lastClick == undefined) {
+			lastClick = player.pos;
+			return;
+		}
+		
+		var newBody = Bodies.circle(lastClick.x, lastClick.y, gemRad);
+		var vel = {
+				x: Math.min(25, Math.abs(lastClick.x - player.pos.x)) * Math.sign(lastClick.x - player.pos.x),
+				y: Math.min(25, Math.abs(lastClick.y - player.pos.y)) * Math.sign(lastClick.y - player.pos.y)
+			};
+			
+		Body.setVelocity(newBody, vel);
+		add(newBody);
 	});
 }
 
+// INITAL GAME SETUP: sets up starting world objects
+function setupWorld() {
+		
+	for (var i = 0; i < 5; i++) {
+		var newGem = Bodies.rectangle(
+			(Math.random() * canvas.width),
+			(Math.random() * canvas.height/2),
+			gemRad,
+			gemRad
+		);
+		World.add(engine.world, newGem);
+	}
+}
+
+// Process a Matter body and returns a slimmed down version of it
+function processBody(physBody) {
+	return {
+		label: physBody.label,
+		angle: physBody.angle,
+		bounds: physBody.bounds,
+		id: physBody.id,
+		position: physBody.position,
+		velocity: physBody.velocity,
+		render: physBody.render,
+		isStatic: physBody.isStatic,
+		isSleeping: physBody.isSleeping,
+		circleRadius: physBody.circleRadius,
+		time: new Date().getTime()
+	}
+}
+
+// Adds an object to the world, immediately emitting it to the other user
+function add(obj) {
+	World.add(engine.world, [obj]);
+	socket.emit(
+		"sendOrUpdateBody",
+		processBody(obj)
+	);
+}
+
+// Emits all bodies in the world
+function emitBodies() {
+	for (var i = 0; i < engine.world.bodies.length; ++i) {
+		
+		if (engine.world.bodies[i] != undefined && !engine.world.bodies[i].isSleeping)
+		socket.emit(
+			"sendOrUpdateBody",
+			processBody(engine.world.bodies[i])
+		);
+	}
+}
+	
 // FUNCTION: update local game instance
 function update() {
 	// emit player position
-	socket.emit("update", {pos: player.pos})
+	socket.emit("update", {pos: player.pos});
 	
 	// request next frame
 	requestAnimationFrame(update);

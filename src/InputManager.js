@@ -36,14 +36,18 @@ class InputManager {
 				return;
 			}
 			
-			var newBody = this.Manager.Bodies.circle(socket.lastClick.x, socket.lastClick.y, 15);
+			//var newBody = this.Manager.Bodies.circle(socket.lastClick.x, socket.lastClick.y, 15);
 			var vel = {
 					x: Math.min(30, Math.abs(socket.lastClick.x - data.pos.x)) * Math.sign(socket.lastClick.x - data.pos.x),
 					y: Math.min(30, Math.abs(socket.lastClick.y - data.pos.y)) * Math.sign(socket.lastClick.y - data.pos.y)
 				};
-			this.Manager.Body.setVelocity(newBody, vel);
-			
-			this.Manager.add(newBody);
+				
+			this.io.sockets.in(this.Manager.room).emit("sendOrUpdateBody", {
+				position: data.pos,
+				velocity: vel,
+				label: "Circle Body",
+				circleRadius: 15
+			});
 			
 		}.bind(this));
 	}
