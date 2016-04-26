@@ -30,6 +30,12 @@ class InputManager {
 	onRelease(socket) {
 		socket.on("release", function(data) {
 			
+			// make sure lastClick has been declared, otherwise declare and bail out
+			if (socket.lastClick == undefined) {
+				socket.lastClick = data.pos;
+				return;
+			}
+			
 			var newBody = this.Manager.Bodies.circle(socket.lastClick.x, socket.lastClick.y, 15);
 			var vel = {
 					x: Math.min(30, Math.abs(socket.lastClick.x - data.pos.x)) * Math.sign(socket.lastClick.x - data.pos.x),

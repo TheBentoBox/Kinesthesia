@@ -103,7 +103,7 @@ function setupSocket() {
 			// this makes matter correctly calculate its weight, volume, etc. phys properties
 			switch(data.label) {
 				case "Circle Body":
-						objToMakeOrUpdate = Bodies.circle(data.position.x, data.position.y, (data.bounds.max.x - data.bounds.min.x)/2);
+						objToMakeOrUpdate = Bodies.circle(data.position.x, data.position.y, data.circleRadius);
 						break;
 				default:
 						objToMakeOrUpdate = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
@@ -118,8 +118,10 @@ function setupSocket() {
 			// since it's new, we need to add it to the world
 			World.add(engine.world, objToMakeOrUpdate);
 		}
-		else {
+		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
+			var vel = objToMakeOrUpdate.velocity.x + "x " + objToMakeOrUpdate.velocity.y + "y";
+			Matter.Body.update(objToMakeOrUpdate, new Date().getTime() - data.time, 1, 1);
 		}
 	});
 	
@@ -223,20 +225,11 @@ function initializeMatter() {
 				height: 640,
 				wireframes: false,
 				background: "#222",
-				enabled: false,
-				showDebug: true,
-				showBroadphase: true,
-				showBounds: true,
-				showVelocity: true,
-				showCollisions: true,
-				showAxes: true,
-				showPositions: true,
 				showAngleIndicator: true,
-				showIds: true,
-				showShadows: true
 			}
 		}
 	});
+	engine.enableSleeping = true;
 	
 	// get reference to game canvas and context
 	canvas = document.querySelector("canvas");

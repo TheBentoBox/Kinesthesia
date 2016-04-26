@@ -5,6 +5,7 @@
 var Matter = require("matter-js");
 var InputManager = require("./InputManager.js");
 var objects;
+var lastTime;
 
 // CLASS: handles an instance of Kinesthesia
 class GameManager {
@@ -58,9 +59,8 @@ class GameManager {
 				this.gemRad,
 				this.gemRad
 			);
-			this.gems.push(newGem);
+			this.World.add(this.engine.world, newGem);
 		}
-		this.World.add(this.engine.world, this.gems);
 		
 		// update player 1
 		this.p1.emit("msg", {msg: "Game started. You are playing against " + this.p2.name + "."});
@@ -109,13 +109,18 @@ class GameManager {
 		this.emitBodies();
 		
 		// begin the update loop
-		setInterval(this.loop.bind(this), 1000/30);
+		setInterval(this.loop.bind(this), 1000/60);
+		lastTime = new Date().getTime();
 	}
 	
 	
 	loop() {
-		this.Engine.update(this.engine, 1000/30);
+		var currentTime = new Date().getTime();
+		
+		this.Engine.update(this.engine, currentTime - lastTime);
 		this.emitBodies();
+		
+		lastTime = new Date().getTime();
 	}
 	
 	
@@ -123,19 +128,25 @@ class GameManager {
 	processBody(physBody) {
 		return {
 			label: physBody.label,
-			isStatic: physBody.isStatic,
 			angle: physBody.angle,
 			bounds: physBody.bounds,
+			force: physBody.force,
+			speed: physBody.speed,
 			id: physBody.id,
 			position: physBody.position,
+			positiovPrev: physBody.positiovPrev,
+			torque: physBody.torque,
 			velocity: physBody.velocity,
-			render: physBody.render
+			render: physBody.render,
+			isStatic: physBody.isStatic,
+			isSleeping: physBody.isSleeping,
+			circleRadius: physBody.circleRadius,
+			time: new Date().getTime()
 		}
 	}
 	
 	
 	add(obj) {
-		
 		this.World.add(this.engine.world, [obj]);
 		this.io.sockets.in(this.room).emit(
 			"sendOrUpdateBody",
@@ -147,7 +158,8 @@ class GameManager {
 	emitBodies() {
 		
 		for (var i = 0; i < this.engine.world.bodies.length; ++i) {
-			if (this.engine.world.bodies[i] != undefined && this.engine.world.bodies[i].isSleeping == false)
+			
+			if (this.engine.world.bodies[i] != undefined)
 			this.io.sockets.in(this.room).emit(
 				"sendOrUpdateBody",
 				this.processBody(this.engine.world.bodies[i])
@@ -165,6 +177,7 @@ class GameManager {
 			
 		// create an engine
 		this.engine = this.Engine.create();
+		this.engine.enableSleeping = true;
 		
 		// create the ground and add it to the world
 		var ground = this.Bodies.rectangle(this.screen.x/2, this.screen.y + 50, this.screen.x*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
