@@ -134,6 +134,7 @@ function setupSocket() {
 		}
 		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
+			Matter.Body.update(objToMakeOrUpdate, new Date().getTime() - data.time, 1, 1);
 		}
 	});
 	
