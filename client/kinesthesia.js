@@ -221,7 +221,7 @@ function initializeGame() {
 	// The host starts up the world and begins an update loop
 	if (IS_HOST) {
 		setupWorld();
-		setInterval(emitBodies, 1000/10);
+		setInterval(emitBodies, 1000/30);
 	}
 	
 	// Begin update tick
