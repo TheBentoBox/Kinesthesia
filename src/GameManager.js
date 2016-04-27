@@ -33,6 +33,12 @@ class GameManager {
 		this.onUpdate(this.p1);
 		this.onUpdate(this.p2);
 		
+		// Setup for players spawning in objects
+		this.onObjectSpawn(this.p1);
+		this.onObjectSpawn(this.p2);
+		
+		this.onHostEmit(this.p1);
+		
 		//this.onDisconnect(this.p1);
 		//this.onDisconnect(this.p2);
 		
@@ -55,9 +61,8 @@ class GameManager {
 			y: this.screen.y / 2
 		};
 		
-		// tell player 1 they're the hose
+		// tell player 1 they're the host
 		this.p1.emit("notifyHost");
-		this.p1.on("sendOrUpdateBody", function (data) { this.p2.emit("sendOrUpdateBody", data) }.bind(this));
 		
 		// randomly create gems
 		this.gems = [];
@@ -121,6 +126,20 @@ class GameManager {
 				}
 			);
 		});
+	}
+	
+	// Callback for when a user tries to create an object
+	onObjectSpawn(socket) {
+		socket.on("requestAddBody", function (data) {
+			this.io.sockets.in(this.room).emit("sendOrUpdateBody", data)
+		}.bind(this));
+	}
+	
+	// Callback for the host sending their objects to the other user
+	onHostEmit(socket) {
+		socket.on("hostEmitBody", function(data) {
+			this.p2.emit("sendOrUpdateBody", data);
+		}.bind(this));
 	}
 	
 	// Basic distance formula

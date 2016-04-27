@@ -236,7 +236,6 @@ span.statistic {
 
 /* GAME PAGE */
 canvas {
-	background-image: url("img/background.png");
 	background-size: cover;
 }
 

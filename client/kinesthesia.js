@@ -21,7 +21,10 @@ var gemRad = 15;
 var goalWidth = 100;
 var IS_HOST = false;
 var lastClick = {};
-var SLEEPING_CACHE = {};
+
+// used to control frames in which resting objects are emitted
+// resting objects are occasionally forcibly emitted at times based on the frame they fall asleep
+var globalIteration = 0;
 
 // Shorthand for Matter components
 var Engine, World, Bodies, Body;
@@ -121,7 +124,10 @@ function setupSocket() {
 			
 			Matter.Body.set(objToMakeOrUpdate, data);
 			
+			// force some variables to be sets
 			objToMakeOrUpdate.id = data.id;
+			objToMakeOrUpdate.atRest = -1;
+			objToMakeOrUpdate.atRestCount = 0;
 			
 			// since it's new, we need to add it to the world
 			World.add(engine.world, objToMakeOrUpdate);
@@ -207,21 +213,18 @@ function setupSocket() {
 // FUNCTION: initializes game space (Matter)
 function initializeGame() {
 	
+	// Sets up matter world and input callbacks for using abilities
 	initializeMatter();
 	initializeInput();
 	
+	// The host starts up the world and begins an update loop
 	if (IS_HOST) {
-		var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
-		var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
-		var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: "#600960" }});
-		World.add(engine.world, [ground, p1Wall, p2Wall]);
-		
 		setupWorld();
+		setInterval(emitBodies, 1000/10);
 	}
 	
 	// Begin update tick
 	setTimeout(update, 100);
-	setInterval(emitBodies, 1000/20);
 }
 
 // FUNCTION: initializes Matter.js game world
@@ -246,7 +249,7 @@ function initializeMatter() {
 			}
 		}
 	});
-	engine.enableSleeping = true;
+	//engine.enableSleeping = true;
 	
 	// get reference to game canvas and context
 	canvas = document.querySelector("canvas");
@@ -296,6 +299,13 @@ function initializeInput() {
 
 // INITAL GAME SETUP: sets up starting world objects
 function setupWorld() {
+	
+	var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
+	var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
+	var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: "#600960" }});
+	add (ground);
+	add (p1Wall);
+	add (p2Wall);
 		
 	for (var i = 0; i < 5; i++) {
 		var newGem = Bodies.rectangle(
@@ -304,7 +314,8 @@ function setupWorld() {
 			gemRad,
 			gemRad
 		);
-		World.add(engine.world, newGem);
+		
+		add(newGem);
 	}
 }
 
@@ -319,7 +330,6 @@ function processBody(physBody) {
 		velocity: physBody.velocity,
 		render: physBody.render,
 		isStatic: physBody.isStatic,
-		isSleeping: physBody.isSleeping,
 		circleRadius: physBody.circleRadius,
 		time: new Date().getTime()
 	}
@@ -327,23 +337,47 @@ function processBody(physBody) {
 
 // Adds an object to the world, immediately emitting it to the other user
 function add(obj) {
-	World.add(engine.world, [obj]);
 	socket.emit(
-		"sendOrUpdateBody",
+		"requestAddBody",
 		processBody(obj)
 	);
 }
 
 // Emits all bodies in the world
 function emitBodies() {
+	
 	for (var i = 0; i < engine.world.bodies.length; ++i) {
 		
-		if (engine.world.bodies[i] != undefined && !engine.world.bodies[i].isSleeping)
-		socket.emit(
-			"sendOrUpdateBody",
-			processBody(engine.world.bodies[i])
-		);
+		// Update whether or not the object is at rest
+		// We use our own rest system so the physics continue normally under all circumstances
+		// Matter bodies seem to come to rest at 0.2777777777~ speed for some reason.
+		if (engine.world.bodies[i].speed < 0.2777778 && engine.world.bodies[i].atRest <= -1) {
+			
+			++engine.world.bodies[i].atRestCount;
+			
+			// put it to sleep if it's been at rest long enough
+			if (engine.world.bodies[i].atRestCount >= 10) {
+				engine.world.bodies[i].atRest = globalIteration;
+			}
+		}
+		// wake resting moving objects back up
+		else if (engine.world.bodies[i].speed > 0.2777778 && engine.world.bodies[i].atRest > -1) {
+			engine.world.bodies[i].atRest = -1;
+			engine.world.bodies[i].atRestCount = 0;
+		}
+		
+		// emit body if it's defined and not at rest
+		if (engine.world.bodies[i] != undefined && (engine.world.bodies[i].atRest <= -1 || engine.world.bodies[i].atRest == globalIteration)) {
+			
+			socket.emit(
+				"hostEmitBody",
+				processBody(engine.world.bodies[i])
+			);
+		}
 	}
+	
+	// update global iteration value which is used to control resting bodies
+	globalIteration = (globalIteration + 1) % 10;
 }
 	
 // FUNCTION: update local game instance
