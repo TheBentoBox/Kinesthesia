@@ -1,7 +1,10 @@
 "use strict";
+// if game exists use the existing copy
+// else create a new object literal
+var game = game || {};
 
 // IIFE for entire game
-(function() {
+game.main = (function() {
 
 // web socket to use
 var socket;
@@ -10,11 +13,25 @@ var socket;
 var canvas;
 var canvasPos;
 var ctx;
+var windowManager = game.windowManager; // reference to the engine's window manager
 
 // game/server feedback box
 var msgBox;
 
 //{ GAME VARS
+// abilities the player can switch between
+var ABILITIES = {
+	CANNONBALL: {
+		name: "Cannonball"
+	},
+	GRENADE: {
+		name: "Grenade"
+	},
+	GRAVITY_WELL: {
+		name: "Gravity Well"
+	}
+};
+
 // size constants
 var playerRad = 4;
 var gemRad = 15;
@@ -39,7 +56,7 @@ var player = {
 		x: -100,
 		y: -100
 	},
-	grabbed: 0,
+	currentAbility: ABILITIES['CANNONBALL'],
 	score: 0
 };
 
@@ -51,16 +68,11 @@ var opponent = {
 		x: -100,
 		y: -100
 	},
-	grabbed: 0,
+	currentAbility: ABILITIES['CANNONBALL'],
 	score: 0
 };
 
 //} GAME VARS
-
-// FUNCTION: clamp value between min and max
-function clamp(value, min, max) {
-	return Math.max(min, Math.min(value, max));
-}
 
 // FUNCTION: connect socket and setup callbacks
 function setupSocket() {
@@ -77,8 +89,6 @@ function setupSocket() {
 		socket.emit("join", userdata);
 		socket.emit("sendId", { id: userdata._id });
 	});
-	
-	
 	
 	// Listens for notifaction from the server that we're the host of the game
 	socket.on("notifyHost", function() {
@@ -217,6 +227,7 @@ function initializeGame() {
 	// Sets up matter world and input callbacks for using abilities
 	initializeMatter();
 	initializeInput();
+	setupUI();
 	
 	// The host starts up the world and begins an update loop
 	if (IS_HOST) {
@@ -270,6 +281,9 @@ function initializeMatter() {
 function initializeInput() {
 	// setup canvas mouse down behavior
 	canvas.addEventListener('mousedown', function(e) {
+		e.stopPropagation();
+		e.preventDefault();
+		
 		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
 		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
 		
@@ -287,6 +301,7 @@ function initializeInput() {
 			return;
 		}
 		
+		// prep the new body
 		var newBody = Bodies.circle(lastClick.x, lastClick.y, gemRad);
 		var vel = {
 				x: Math.min(25, Math.abs(lastClick.x - player.pos.x)) * Math.sign(lastClick.x - player.pos.x),
@@ -296,6 +311,25 @@ function initializeInput() {
 		Body.setVelocity(newBody, vel);
 		add(newBody);
 	});
+
+	// scrolling to change between abilities
+	document.addEventListener('wheel', function(e) {
+		// scroll down - next ability
+		if (e.deltaY > 0) {
+			player.currentAbility = next(ABILITIES, player.currentAbility);
+		}
+		// scroll up - previous
+		else {
+			player.currentAbility = previous(ABILITIES, player.currentAbility);
+		}
+	});
+}
+
+// INITIAL UI SETUP
+function setupUI() {
+	windowManager.makeUI("abilityHUD", 0, 0, 100, 50);
+	windowManager.makeText("abilityHUD", "username", 5, 5, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
+	windowManager.toggleUI("abilityHUD");
 }
 
 // INITAL GAME SETUP: sets up starting world objects
@@ -385,6 +419,7 @@ function emitBodies() {
 function update() {
 	// emit player position
 	socket.emit("update", {pos: player.pos});
+	game.windowManager.updateAndDraw([]);
 	
 	// request next frame
 	requestAnimationFrame(update);

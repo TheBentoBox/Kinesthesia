@@ -4,9 +4,12 @@ block append content
   article
     h3#serverInfo Waiting for game to start
     div#canvasContainer
+      canvas(width="1200", height="640", id="UI")
     input#token(type="hidden", name="_csrf", value="#{csrfToken}")
 
 block append scripts
   script(src="/assets/matter.min.js")
   script(src="/assets/pixi.min.js")
+  script(src="/assets/utilities.js")
+  script(src="/assets/window-manager.js")
   script(src="/assets/kinesthesia.js")

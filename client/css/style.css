@@ -239,6 +239,11 @@ canvas {
 	background-size: cover;
 }
 
+#UI {
+	z-index: 1;
+	position: absolute;
+}
+
 #canvasContainer {
 	width: 100%;
 	text-align: center;
