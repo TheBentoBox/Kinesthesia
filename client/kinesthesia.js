@@ -97,6 +97,7 @@ function setupSocket() {
 	// Listens for notifaction from the server that we're the host of the game
 	socket.on("notifyHost", function() {
 		IS_HOST = true;
+		console.log("I'm the host!");
 	});
 	
 	// Callback for successful join
@@ -341,6 +342,9 @@ function initializeInput() {
 		add(newBody);
 	});
 
+	// prevent right click menu on canvas
+	canvas.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+	
 	// scrolling to change between abilities
 	canvas.addEventListener('wheel', function(e) {
 		e.preventDefault();
