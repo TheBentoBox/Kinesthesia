@@ -98,12 +98,10 @@ function setupSocket() {
 	// Listens for notifaction from the server that we're the host of the game
 	socket.on("notifyHost", function() {
 		IS_HOST = true;
-		console.log("I'm the host");
 		
 		if (gameInitialized) {
 			setupWorld();
 			setInterval(emitBodies, 1000/10);
-			console.log("Starting game tick in notifyHost");
 		}
 	});
 	
@@ -154,10 +152,6 @@ function setupSocket() {
 		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
 			objToMakeOrUpdate.time = data.time;
-			console.log("Successfully updated existing object");
-		}
-		else {
-			console.log("Received old data (" + data.time + ") for object updated at  " + objToMakeOrUpdate.time);
 		}
 	});
 	
@@ -262,7 +256,6 @@ function initializeGame() {
 		setupWorld();
 		setInterval(emitBodies, 1000/10);
 		gameInitialized = true;
-		console.log("Starting game tick in initializeGame");
 	}
 	
 	// Begin update tick
@@ -469,40 +462,39 @@ function add(obj) {
 
 // Emits all bodies in the world
 function emitBodies() {
-	console.log("Trying to emit all bodies");
 	
 	for (var i = 0; i < engine.world.bodies.length; ++i) {
 		
 		// don't need to re-emit static bodies since they don't update
-		if (engine.world.bodies[i].isStatic) return;
+		if (!engine.world.bodies[i].isStatic) {
 		
-		// Update whether or not the object is at rest
-		// We use our own rest system so the physics continue normally under all circumstances
-		// Matter bodies seem to come to rest at 0.2777777777~ speed for some reason.
-		if (engine.world.bodies[i].speed < 0.2777778 && engine.world.bodies[i].atRest <= -1) {
+			// Update whether or not the object is at rest
+			// We use our own rest system so the physics continue normally under all circumstances
+			// Matter bodies seem to come to rest at 0.2777777777~ speed for some reason.
+			if (engine.world.bodies[i].speed < 0.2777778 && engine.world.bodies[i].atRest <= -1) {
+				
+				++engine.world.bodies[i].atRestCount;
+				
+				// put it to sleep if it's been at rest long enough
+				if (engine.world.bodies[i].atRestCount >= 10) {
+					engine.world.bodies[i].atRest = globalIteration;
+				}
+			}
+			// wake resting moving objects back up
+			else if (engine.world.bodies[i].speed > 0.2777778 && engine.world.bodies[i].atRest > -1) {
+				engine.world.bodies[i].atRest = -1;
+				engine.world.bodies[i].atRestCount = 0;
+			}
 			
-			++engine.world.bodies[i].atRestCount;
-			
-			// put it to sleep if it's been at rest long enough
-			if (engine.world.bodies[i].atRestCount >= 10) {
-				engine.world.bodies[i].atRest = globalIteration;
+			// emit body if it's defined and not at rest
+			if (engine.world.bodies[i] != undefined && (engine.world.bodies[i].atRest <= -1 || engine.world.bodies[i].atRest == globalIteration)) {
+				
+				socket.emit(
+					"hostEmitBody",
+					processBody(engine.world.bodies[i])
+				);
 			}
 		}
-		// wake resting moving objects back up
-		else if (engine.world.bodies[i].speed > 0.2777778 && engine.world.bodies[i].atRest > -1) {
-			engine.world.bodies[i].atRest = -1;
-			engine.world.bodies[i].atRestCount = 0;
-		}
-		
-		// emit body if it's defined and not at rest
-		//if (engine.world.bodies[i] != undefined && (engine.world.bodies[i].atRest <= -1 || engine.world.bodies[i].atRest == globalIteration)) {
-			console.log("Emitting body");
-			
-			socket.emit(
-				"hostEmitBody",
-				processBody(engine.world.bodies[i])
-			);
-		//}
 	}
 	
 	
