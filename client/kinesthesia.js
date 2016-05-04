@@ -474,7 +474,7 @@ function emitBodies() {
 	for (var i = 0; i < engine.world.bodies.length; ++i) {
 		
 		// don't need to re-emit static bodies since they don't update
-		//if (engine.world.bodies[i].isStatic) return;
+		if (engine.world.bodies[i].isStatic) return;
 		
 		// Update whether or not the object is at rest
 		// We use our own rest system so the physics continue normally under all circumstances
