@@ -13,6 +13,7 @@ var socket;
 var canvas;
 var canvasPos;
 var ctx;
+var serverInfo
 var windowManager = game.windowManager; // reference to the engine's window manager
 
 // game/server feedback box
@@ -23,15 +24,18 @@ var msgBox;
 var ABILITIES = {
 	CANNONBALL: {
 		name: "Cannonball",
-		src: "iconCannonball"
+		src: "assets/images/iconCannonball.png",
+		objRadius: 18
 	},
 	GRENADE: {
 		name: "Grenade",
-		src: "iconGrenade"
+		src: "assets/images/iconGrenade.png",
+		objRadius: 18
 	},
 	GRAVITY_WELL: {
 		name: "Gravity Well",
-		src: "iconGravityWell"
+		src: "assets/images/iconGravityWell.png",
+		objRadius: 15
 	}
 };
 
@@ -83,6 +87,7 @@ function setupSocket() {
 	// The io variable is a global var from the socket.io script above
 	socket = (socket || io.connect());
 	socket.emit("userdata", userdata);
+	serverInfo = document.querySelector('#serverInfo');
 	
 	// Callback for start of play
 	socket.on("play", initializeGame);
@@ -113,6 +118,16 @@ function setupSocket() {
 		// hide connection form
 		document.querySelector("#connectForm").style.visibility = "hidden";
 	}); 
+	
+	// When the server sends us info - updates the ticker at the top of the game
+	socket.on("serverInfo", function(data) {
+		// temporarily (2 seconds) displays server notifications
+		if (serverInfo) {
+			serverInfo.style.opacity = 1;
+			serverInfo.innerHTML = data.msg;
+			setTimeout(function() { serverInfo.style.opacity = 0; }, 2000);
+		}
+	});
 	
 	// Removes all bodies from the game world
 	socket.on("clearBodies", function(data) {
@@ -266,7 +281,7 @@ function initializeGame() {
 function loadAssets() {
 	for (var key in ABILITIES) {
 		ABILITIES[key].img = new Image();
-		ABILITIES[key].img.src = "assets/images/" + ABILITIES[key].src + ".png";
+		ABILITIES[key].img.src = ABILITIES[key].src;
 	}
 }
 
@@ -287,12 +302,10 @@ function initializeMatter() {
 				width: 1200,
 				height: 640,
 				wireframes: false,
-				background: "#222",
-				showAngleIndicator: true,
+				background: "#222"
 			}
 		}
 	});
-	//engine.enableSleeping = true;
 	
 	// get reference to game canvas and context
 	canvas = document.querySelector("canvas");
@@ -318,8 +331,8 @@ function initializeInput() {
 		e.stopPropagation();
 		e.preventDefault();
 		
-		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
-		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
+		player.pos.x = clamp(e.layerX, 0, canvas.width);
+		player.pos.y = clamp(e.layerY, 0, canvas.height);
 		
 		lastClick = { x: player.pos.x, y: player.pos.y };
 	});
@@ -329,23 +342,29 @@ function initializeInput() {
 		// only accept left clicks here
 		if (e.which != 1) return;
 		
-		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
-		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
+		player.pos.x = clamp(e.layerX, 0, canvas.width);
+		player.pos.y = clamp(e.layerY, 0, canvas.height);
 						
 		// make sure lastClick has been declared, otherwise declare and bail out
 		if (lastClick == undefined) {
 			lastClick = player.pos;
+			
 			return;
 		}
 		
 		// prep the new body
-		var newBody = Bodies.circle(lastClick.x, lastClick.y, gemRad);
+		var newBody = Bodies.circle(lastClick.x, lastClick.y, player.currentAbility.objRadius);
 		var vel = {
-				x: Math.min(25, Math.abs(lastClick.x - player.pos.x)) * Math.sign(lastClick.x - player.pos.x),
-				y: Math.min(25, Math.abs(lastClick.y - player.pos.y)) * Math.sign(lastClick.y - player.pos.y)
+				x: Math.min(20, Math.abs(lastClick.x - player.pos.x)) * Math.sign(lastClick.x - player.pos.x),
+				y: Math.min(20, Math.abs(lastClick.y - player.pos.y)) * Math.sign(lastClick.y - player.pos.y)
 			};
+		
+		// apply velocity and render options to the new body
 			
 		Body.setVelocity(newBody, vel);
+		newBody.objectType = player.currentAbility;
+		newBody.render.sprite.texture = player.currentAbility.src;
+		
 		add(newBody);
 	});
 
@@ -417,13 +436,22 @@ function setupUI() {
 // INITAL GAME SETUP: sets up starting world objects
 function setupWorld() {
 	
+	// static world objects
 	var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
 	var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
 	var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: "#600960" }});
-	add (ground);
-	add (p1Wall);
-	add (p2Wall);
-		
+	var leftWall = Bodies.rectangle(-10, -canvas.height, 20, canvas.height*4, { isStatic: true, render: { strokeStyle: '#000' } } );
+	var rightWall = Bodies.rectangle(canvas.width + 10, -canvas.height, 20, canvas.height*4, { isStatic: true, render: { strokeStyle: '#000' } } );
+	
+	// platforms
+	var leftTiltPlatform = Bodies.rectangle(canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
+	var rightTiltPlatform = Bodies.rectangle(canvas.width - canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
+	Body.setAngle(leftTiltPlatform, (20/360) * 3.14159);
+	Body.setAngle(rightTiltPlatform, (-20/360) * 3.14159);
+	
+	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform]);
+	
+	// add some starting objects
 	for (var i = 0; i < 5; i++) {
 		var newGem = Bodies.rectangle(
 			(Math.random() * canvas.width),
@@ -454,10 +482,19 @@ function processBody(physBody) {
 
 // Adds an object to the world, immediately emitting it to the other user
 function add(obj) {
-	socket.emit(
-		"requestAddBody",
-		processBody(obj)
-	);
+	// allows us to pass in an array of objects to emit
+	var emitObj = obj;
+	if (!Array.isArray(obj)) {
+		emitObj = [obj];
+	}
+	
+	// emit each thing in the array individually
+	for (var i = 0; i < emitObj.length; ++i) {
+		socket.emit(
+			"requestAddBody",
+			processBody(emitObj[i])
+		);
+	}
 }
 
 // Emits all bodies in the world

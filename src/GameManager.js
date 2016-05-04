@@ -68,7 +68,7 @@ class GameManager {
 		this.gems = [];
 		
 		// update player 1
-		this.p1.emit("msg", {msg: "Game started. You are playing against " + this.p2.name + "."});
+		this.p1.emit("serverInfo", {msg: "Game started. You are playing against " + this.p2.name + "."});
 		this.p1.emit(
 			"update",
 			{
@@ -88,7 +88,7 @@ class GameManager {
 		);
 		
 		// update player 2
-		this.p2.emit("msg", {msg: "Game started. You are playing against " + this.p1.name + "."});
+		this.p2.emit("serverInfo", {msg: "Game started. You are playing against " + this.p1.name + "."});
 		this.p2.emit(
 			"update",
 			{
