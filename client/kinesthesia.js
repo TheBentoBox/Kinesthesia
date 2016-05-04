@@ -147,6 +147,9 @@ function setupSocket() {
 		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
 		}
+		else {
+			console.log("Received " + data.time + " for object at  " + objToMakeOrUpdate.time);
+		}
 	});
 	
 	// Callback for update from manager
