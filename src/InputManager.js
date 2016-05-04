@@ -8,15 +8,23 @@ class InputManager {
 		this.io = io;
 		this.Manager = manager;
 		this.p1 = player1;
-		this.p2 = player2;		
+		this.p2 = player2;
+		
+		this.onAbilityChange(this.p1);
+		this.onAbilityChange(this.p2);
 	}
-	
 
 	// Notifies other users of player ability change
 	onAbilityChange(socket) {
 		socket.on("abilityChange", function(data) {
-			if (this.io.sockets.in(this.Manager.room).emit("abilityChange", data));
-		});
+			// try to only send data to correct user
+			if (socket == this.p1) {
+				this.p2.emit("abilityChange", data);
+			}
+			else {
+				this.p1.emit("abilityChange", data);
+			}
+		}.bind(this));
 	}
 }
 

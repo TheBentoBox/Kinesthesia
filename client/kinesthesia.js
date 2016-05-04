@@ -22,20 +22,21 @@ var msgBox;
 // abilities the player can switch between
 var ABILITIES = {
 	CANNONBALL: {
-		name: "Cannonball"
+		name: "Cannonball",
+		src: "iconCannonball"
 	},
 	GRENADE: {
-		name: "Grenade"
+		name: "Grenade",
+		src: "iconGrenade"
 	},
 	GRAVITY_WELL: {
-		name: "Gravity Well"
+		name: "Gravity Well",
+		src: "iconGravityWell"
 	}
 };
 
 // size constants
-var playerRad = 4;
 var gemRad = 15;
-var goalWidth = 100;
 var IS_HOST = false;
 var lastClick = {};
 
@@ -82,6 +83,9 @@ function setupSocket() {
 	socket = (socket || io.connect());
 	socket.emit("userdata", userdata);
 	
+	// Callback for start of play
+	socket.on("play", initializeGame);
+	
 	// Listener for user connection event
 	socket.on("connect", function(){
 		console.log("Connecting...");
@@ -103,9 +107,6 @@ function setupSocket() {
 		// hide connection form
 		document.querySelector("#connectForm").style.visibility = "hidden";
 	}); 
-	
-	// Callback for start of play
-	socket.on("play", initializeGame);
 	
 	// Removes all bodies from the game world
 	socket.on("clearBodies", function(data) {
@@ -144,7 +145,6 @@ function setupSocket() {
 		}
 		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
-			Matter.Body.update(objToMakeOrUpdate, new Date().getTime() - data.time, 1, 1);
 		}
 	});
 	
@@ -181,6 +181,20 @@ function setupSocket() {
 				}
 				break;
 		}
+	});
+	
+	// Listen for other user changing their ability
+	socket.on("abilityChange", function(data) {
+		// We do it this way because they emit their current ability by name.
+		// Would emit as whole ability type but the img didn't transfer with it properly.
+		for (var key in ABILITIES) {
+			if (ABILITIES[key].name == data) {
+				opponent.currentAbility = ABILITIES[key];
+				break;
+			}
+		}
+		
+		windowManager.modifyImage("opponentHUD", "currAbilityImg", "image", { image: opponent.currentAbility.img });
 	});
 	
 	// Callback for scoring a point
@@ -225,6 +239,7 @@ function setupSocket() {
 function initializeGame() {
 	
 	// Sets up matter world and input callbacks for using abilities
+	loadAssets();
 	initializeMatter();
 	initializeInput();
 	setupUI();
@@ -237,6 +252,14 @@ function initializeGame() {
 	
 	// Begin update tick
 	setTimeout(update, 100);
+}
+
+// FUNCTION: Loads in some images
+function loadAssets() {
+	for (var key in ABILITIES) {
+		ABILITIES[key].img = new Image();
+		ABILITIES[key].img.src = "assets/images/" + ABILITIES[key].src + ".png";
+	}
 }
 
 // FUNCTION: initializes Matter.js game world
@@ -281,6 +304,9 @@ function initializeMatter() {
 function initializeInput() {
 	// setup canvas mouse down behavior
 	canvas.addEventListener('mousedown', function(e) {
+		// only accept left clicks here
+		if (e.which != 1) return;
+		
 		e.stopPropagation();
 		e.preventDefault();
 		
@@ -292,6 +318,9 @@ function initializeInput() {
 	
 	// setup canvas mouse up behavior
 	document.addEventListener('mouseup', function(e) {
+		// only accept left clicks here
+		if (e.which != 1) return;
+		
 		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
 		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
 						
@@ -313,7 +342,9 @@ function initializeInput() {
 	});
 
 	// scrolling to change between abilities
-	document.addEventListener('wheel', function(e) {
+	canvas.addEventListener('wheel', function(e) {
+		e.preventDefault();
+		
 		// scroll down - next ability
 		if (e.deltaY > 0) {
 			player.currentAbility = next(ABILITIES, player.currentAbility);
@@ -322,14 +353,54 @@ function initializeInput() {
 		else {
 			player.currentAbility = previous(ABILITIES, player.currentAbility);
 		}
+		
+		socket.emit("abilityChange", player.currentAbility.name);
+		windowManager.modifyImage("playerHUD", "currAbilityImg", "image", { image: player.currentAbility.img });
+	});
+
+	// use of other various keys, e.g. number keys to switch between abilities
+	document.addEventListener('keydown', function(e) {
+		
+		switch (e.keyCode) {
+			case KEY.ONE:
+			case KEY.NUM_ONE:
+			case KEY.Q:
+				player.currentAbility = ABILITIES.CANNONBALL;
+				break;
+				
+			case KEY.TWO:
+			case KEY.NUM_TWO:
+			case KEY.W:
+				player.currentAbility = ABILITIES.GRENADE;
+				break;
+				
+			case KEY.THREE:
+			case KEY.NUM_THREE:
+			case KEY.E:
+				player.currentAbility = ABILITIES.GRAVITY_WELL;
+				break;
+		}
+				
+		socket.emit("abilityChange", player.currentAbility.name);
+		windowManager.modifyImage("playerHUD", "currAbilityImg", "image", { image: player.currentAbility.img });
 	});
 }
 
 // INITIAL UI SETUP
 function setupUI() {
-	windowManager.makeUI("abilityHUD", 0, 0, 100, 50);
-	windowManager.makeText("abilityHUD", "username", 5, 5, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
-	windowManager.toggleUI("abilityHUD");
+	// PLAYER INFO HUD // {
+	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 100), 0, 100, 50);
+	windowManager.makeText("playerHUD", "username", 15 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
+	windowManager.makeImage("playerHUD", "currAbilityImg", 50, 0, 50, 50, player.currentAbility.img);
+	windowManager.toggleUI("playerHUD");
+	// end PLAYER INFO HUD
+	
+	// OPPONENT INFO HUD // {
+	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 100), 0, 100, 50);
+	windowManager.makeText("opponentHUD", "username", 15 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Roboto'", "white");
+	windowManager.makeImage("opponentHUD", "currAbilityImg", 50, 0, 50, 50, opponent.currentAbility.img);
+	windowManager.toggleUI("opponentHUD");
+	// end OPPONENT INFO HUD }
 }
 
 // INITAL GAME SETUP: sets up starting world objects
@@ -383,6 +454,9 @@ function emitBodies() {
 	
 	for (var i = 0; i < engine.world.bodies.length; ++i) {
 		
+		// don't need to re-emit static bodies since they don't update
+		if (engine.world.bodies[i].isStatic) return
+		
 		// Update whether or not the object is at rest
 		// We use our own rest system so the physics continue normally under all circumstances
 		// Matter bodies seem to come to rest at 0.2777777777~ speed for some reason.
@@ -428,4 +502,3 @@ function update() {
 window.onload = setupSocket;
 
 })();
-// end game IIFE
