@@ -146,9 +146,11 @@ function setupSocket() {
 		}
 		else if (data.time > objToMakeOrUpdate.time) {
 			Matter.Body.set(objToMakeOrUpdate, data);
+			objToMakeOrUpdate.time = data.time;
+			console.log("Successfully updated existing object");
 		}
 		else {
-			console.log("Received " + data.time + " for object at  " + objToMakeOrUpdate.time);
+			console.log("Received old data (" + data.time + ") for object updated at  " + objToMakeOrUpdate.time);
 		}
 	});
 	
@@ -489,8 +491,10 @@ function emitBodies() {
 				"hostEmitBody",
 				processBody(engine.world.bodies[i])
 			);
+			console.log("Emitting body");
 		}
 	}
+	
 	
 	// update global iteration value which is used to control resting bodies
 	globalIteration = (globalIteration + 1) % 10;
