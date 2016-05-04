@@ -103,7 +103,7 @@ function setupSocket() {
 		if (gameInitialized) {
 			setupWorld();
 			setInterval(emitBodies, 1000/10);
-			console.log("Starting game tick");
+			console.log("Starting game tick in notifyHost");
 		}
 	});
 	
@@ -262,7 +262,7 @@ function initializeGame() {
 		setupWorld();
 		setInterval(emitBodies, 1000/10);
 		gameInitialized = true;
-		console.log("Starting game tick");
+		console.log("Starting game tick in initializeGame");
 	}
 	
 	// Begin update tick
@@ -473,7 +473,7 @@ function emitBodies() {
 	for (var i = 0; i < engine.world.bodies.length; ++i) {
 		
 		// don't need to re-emit static bodies since they don't update
-		if (engine.world.bodies[i].isStatic) return
+		if (engine.world.bodies[i].isStatic) return;
 		
 		// Update whether or not the object is at rest
 		// We use our own rest system so the physics continue normally under all circumstances
@@ -495,12 +495,12 @@ function emitBodies() {
 		
 		// emit body if it's defined and not at rest
 		if (engine.world.bodies[i] != undefined && (engine.world.bodies[i].atRest <= -1 || engine.world.bodies[i].atRest == globalIteration)) {
+			console.log("Emitting body");
 			
 			socket.emit(
 				"hostEmitBody",
 				processBody(engine.world.bodies[i])
 			);
-			console.log("Emitting body");
 		}
 	}
 	
