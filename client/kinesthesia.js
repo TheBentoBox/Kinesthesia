@@ -38,6 +38,7 @@ var ABILITIES = {
 // size constants
 var gemRad = 15;
 var IS_HOST = false;
+var gameInitialized = false;
 var lastClick = {};
 
 // used to control frames in which resting objects are emitted
@@ -97,7 +98,11 @@ function setupSocket() {
 	// Listens for notifaction from the server that we're the host of the game
 	socket.on("notifyHost", function() {
 		IS_HOST = true;
-		console.log("I'm the host!");
+		
+		if (gameInitialized) {
+			setupWorld();
+			setInterval(emitBodies, 1000/10);
+		}
 	});
 	
 	// Callback for successful join
@@ -251,9 +256,10 @@ function initializeGame() {
 	setupUI();
 	
 	// The host starts up the world and begins an update loop
-	if (IS_HOST) {
+	if (IS_HOST && !gameInitialized) {
 		setupWorld();
 		setInterval(emitBodies, 1000/10);
+		gameInitialized = true;
 	}
 	
 	// Begin update tick
