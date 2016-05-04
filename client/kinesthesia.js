@@ -469,11 +469,12 @@ function add(obj) {
 
 // Emits all bodies in the world
 function emitBodies() {
+	console.log("Trying to emit all bodies");
 	
 	for (var i = 0; i < engine.world.bodies.length; ++i) {
 		
 		// don't need to re-emit static bodies since they don't update
-		if (engine.world.bodies[i].isStatic) return;
+		//if (engine.world.bodies[i].isStatic) return;
 		
 		// Update whether or not the object is at rest
 		// We use our own rest system so the physics continue normally under all circumstances
@@ -494,14 +495,14 @@ function emitBodies() {
 		}
 		
 		// emit body if it's defined and not at rest
-		if (engine.world.bodies[i] != undefined && (engine.world.bodies[i].atRest <= -1 || engine.world.bodies[i].atRest == globalIteration)) {
+		//if (engine.world.bodies[i] != undefined && (engine.world.bodies[i].atRest <= -1 || engine.world.bodies[i].atRest == globalIteration)) {
 			console.log("Emitting body");
 			
 			socket.emit(
 				"hostEmitBody",
 				processBody(engine.world.bodies[i])
 			);
-		}
+		//}
 	}
 	
 	
