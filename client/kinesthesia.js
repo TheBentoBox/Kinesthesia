@@ -98,10 +98,12 @@ function setupSocket() {
 	// Listens for notifaction from the server that we're the host of the game
 	socket.on("notifyHost", function() {
 		IS_HOST = true;
+		console.log("I'm the host");
 		
 		if (gameInitialized) {
 			setupWorld();
 			setInterval(emitBodies, 1000/10);
+			console.log("Starting game tick");
 		}
 	});
 	
@@ -260,6 +262,7 @@ function initializeGame() {
 		setupWorld();
 		setInterval(emitBodies, 1000/10);
 		gameInitialized = true;
+		console.log("Starting game tick");
 	}
 	
 	// Begin update tick
