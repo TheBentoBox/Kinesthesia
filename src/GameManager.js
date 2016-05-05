@@ -37,6 +37,10 @@ class GameManager {
 		this.onObjectSpawn(this.p1);
 		this.onObjectSpawn(this.p2);
 		
+		// Setup for players deleting objects
+		this.onObjectRemove(this.p1);
+		this.onObjectRemove(this.p2);
+		
 		this.onHostEmit(this.p1);
 		
 		//this.onDisconnect(this.p1);
@@ -91,7 +95,14 @@ class GameManager {
 	// Callback for when a user tries to create an object
 	onObjectSpawn(socket) {
 		socket.on("requestAddBody", function (data) {
-			this.io.sockets.in(this.room).emit("sendOrUpdateBody", data)
+			this.io.sockets.in(this.room).emit("sendOrUpdateBody", data);
+		}.bind(this));
+	}
+	
+	// Callback for when a user tries to delete an object
+	onObjectRemove(socket) {
+		socket.on("requestRemoveBody", function(data) {
+			this.io.sockets.in(this.room).emit("removeBody", data);
 		}.bind(this));
 	}
 	

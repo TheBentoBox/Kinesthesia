@@ -27,7 +27,7 @@ var ABILITIES = {
 		src: "assets/images/iconCannonball.png",
 		objRadius: 18,
 		lifetime: 1200,
-		launchScaling: 0.125
+		launchScaling: 0.15
 	},
 	GRENADE: {
 		name: "Grenade",
@@ -71,7 +71,7 @@ var COLORS = {
 var globalIteration = 0;
 
 // Shorthand for Matter components
-var Engine, World, Bodies, Body;
+var Engine, World, Bodies, Body, Vector;
 // Engine instance to run game
 var engine;
 
@@ -197,6 +197,15 @@ function setupSocket() {
 		}
 	});
 	
+	// Callback for deleting an object
+	socket.on("removeBody", function(data) {		
+		// find object to remove
+		var objToRemove = Matter.Composite.get(engine.world, data.id, "body");
+		
+		// remove it from world composite
+		Matter.Composite.remove(engine.world, objToRemove);
+	});
+	
 	// Callback for update from other user sent by manager
 	socket.on("updateOther", function(data) {
 		// apply all keys in the data object to they opponent
@@ -310,6 +319,7 @@ function initializeMatter() {
 	World = Matter.World;
 	Bodies = Matter.Bodies;
 	Body = Matter.Body;
+	Vector = Matter.Vector;
 		
 	// create an engine
 	engine = Engine.create({
@@ -396,11 +406,14 @@ function initializeInput() {
 		// set special object properties
 		switch (newBody.objectType.name) {
 			case "Cannonball":
+				newBody.restitution = 0.9;
 				break;
 			case "Grenade":
+				newBody.restitution = 0.2;
 				break;
 			case "Gravity Well":
 				Body.setAngularVelocity(newBody, .1);
+				newBody.restitution = 1;
 				newBody.collisionFilter.category = 0x0002;
 				newBody.collisionFilter.mask = newBody.collisionFilter.category;
 				break;
@@ -506,6 +519,7 @@ function processBody(physBody) {
 		id: physBody.id,
 		position: physBody.position,
 		velocity: physBody.velocity,
+		restitution: physBody.restitution,
 		render: physBody.render,
 		isStatic: physBody.isStatic,
 		isSensor: physBody.isSensor,
@@ -614,10 +628,28 @@ function update() {
 		if (obj.objectType) {
 			switch (obj.objectType.name) {
 				case "Cannonball":
+					// decrement lifetime
 					obj.objectType.lifetime--;
+					
+					// remove if lifetime over
+					if (obj.objectType.lifetime <= 0 && IS_HOST) {
+						socket.emit(
+							"requestRemoveBody",
+							processBody(obj)
+						);
+					}
 					break;
 				case "Grenade":
+					// decrement lifetime
 					obj.objectType.lifetime--;
+					
+					// explode if lifetime over
+					if (obj.objectType.lifetime <= 0 && IS_HOST) {
+						socket.emit(
+							"requestRemoveBody",
+							processBody(obj)
+						);
+					}
 					break;
 				case "Gravity Well":
 					// decrement lifetime
@@ -627,8 +659,25 @@ function update() {
 					Body.applyForce(obj, obj.position, {x: 0, y: -engine.world.gravity.y * engine.world.gravity.scale / 1.45});
 					Body.setAngularVelocity(obj, .1);
 					
+					// make well suck in objects
+					for (var j = 0; j < allObj.length; j++) {
+						if (i != j) {
+							// grab other object in world
+							var other = allObj[j];
+							
+							// calculate point gravity
+							var gravDir = Vector.sub(obj.position, other.position);
+							var gravIntensity = 0.1 / Math.max(Vector.magnitude(gravDir), 5);
+							gravDir = Vector.normalise(gravDir);
+							var gravForce = Vector.mult(gravDir, gravIntensity);
+							
+							// apply gravity
+							Body.applyForce(other, other.position, gravForce);
+						}
+					}
+					
 					// remove if lifetime over
-					if (obj.objectType.lifetime <= 0) {
+					if (obj.objectType.lifetime <= 0 && IS_HOST) {
 						socket.emit(
 							"requestRemoveBody",
 							processBody(obj)
