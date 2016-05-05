@@ -25,17 +25,20 @@ var ABILITIES = {
 	CANNONBALL: {
 		name: "Cannonball",
 		src: "assets/images/iconCannonball.png",
-		objRadius: 18
+		objRadius: 18,
+		lifetime: 1200
 	},
 	GRENADE: {
 		name: "Grenade",
 		src: "assets/images/iconGrenade.png",
-		objRadius: 18
+		objRadius: 18,
+		lifetime: 180
 	},
 	GRAVITY_WELL: {
 		name: "Gravity Well",
 		src: "assets/images/iconGravityWell.png",
-		objRadius: 15
+		objRadius: 15,
+		lifetime: 300
 	}
 };
 
@@ -370,6 +373,21 @@ function initializeInput() {
 		newBody.objectType = player.currentAbility;
 		newBody.render.sprite.texture = player.currentAbility.src;
 		
+		// set special object properties
+		switch (newBody.objectType.name) {
+			case "Cannonball":
+				break;
+			case "Grenade":
+				break;
+			case "Gravity Well":
+				Body.setAngularVelocity(newBody, .1);
+				newBody.collisionFilter.category = 0x0002;
+				newBody.collisionFilter.mask = newBody.collisionFilter.category;
+				break;
+			default:
+				break;
+		}
+		
 		// push the body and reset our last click to stop drawing the line
 		add(newBody);
 		player.lastClick = undefined;
@@ -482,8 +500,11 @@ function processBody(physBody) {
 		velocity: physBody.velocity,
 		render: physBody.render,
 		isStatic: physBody.isStatic,
+		isSensor: physBody.isSensor,
+		collisionFilter: physBody.collisionFilter,
 		circleRadius: physBody.circleRadius,
-		time: new Date().getTime()
+		time: new Date().getTime(),
+		objectType: physBody.objectType
 	}
 }
 
@@ -555,6 +576,40 @@ function update() {
 	ctxUI.clearRect(0, 0, canvasUI.width, canvasUI.height);
 	draw();
 	game.windowManager.updateAndDraw([]);
+	
+	// update special game objects
+	var allObj = engine.world.bodies;
+	for (var i = 0; i < allObj.length; i++) {
+		var obj = allObj[i];
+		if (obj.objectType) {
+			switch (obj.objectType.name) {
+				case "Cannonball":
+					obj.objectType.lifetime--;
+					break;
+				case "Grenade":
+					obj.objectType.lifetime--;
+					break;
+				case "Gravity Well":
+					// decrement lifetime
+					obj.objectType.lifetime--;
+					
+					// make well float and spin constantly
+					Body.applyForce(obj, obj.position, {x: 0, y: -engine.world.gravity.y * engine.world.gravity.scale / 1.45});
+					Body.setAngularVelocity(obj, .1);
+					
+					// remove if lifetime over
+					if (lifetime <= 0) {
+						socket.emit(
+							"requestRemoveBody",
+							processBody(obj)
+						);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
 	
 	// request next frame
 	requestAnimationFrame(update);
