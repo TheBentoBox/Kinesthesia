@@ -26,32 +26,44 @@ var ABILITIES = {
 		name: "Cannonball",
 		src: "assets/images/iconCannonball.png",
 		objRadius: 18,
-		lifetime: 1200
+		lifetime: 1200,
+		launchScaling: 0.125
 	},
 	GRENADE: {
 		name: "Grenade",
 		src: "assets/images/iconGrenade.png",
 		objRadius: 18,
-		lifetime: 180
+		lifetime: 180,
+		launchScaling: 0.125
 	},
 	GRAVITY_WELL: {
 		name: "Gravity Well",
 		src: "assets/images/iconGravityWell.png",
 		objRadius: 15,
-		lifetime: 300
+		lifetime: 300,
+		launchScaling: 0.015
 	}
 };
 
-// size constants
-var gemRad = 15;
-var gameInitialized = false;
-var IS_HOST = false;
+// general image src list
+var IMAGES = {
+	GREEN_GEM: "assets/images/gemGreen.png",
+	ORANGE_GEM: "assets/images/gemOrange.png",
+	PURPLE_GEM: "assets/images/gemPurple.png"
+};
+
+var gemRad = 11; // size of gem bodies (radius)
+var gameInitialized = false; // whether main object loop has started, only relevant for host
+var IS_HOST = false; // whether this user is the host
+var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
 
 // represents the colors of each side (sides 0 and 1)
 // can reference own color with COLORS[player.side]
 var COLORS = {
 	0: "#D6861A",
-	1: "#600960"
+	1: "#600960",
+	ORANGE: "#D6861A",
+	PURPLE: "#600960"
 };
 
 // used to control frames in which resting objects are emitted
@@ -119,6 +131,10 @@ function setupSocket() {
 		if (gameInitialized) {
 			setupWorld();
 			setInterval(emitBodies, 1000/10);
+			setInterval(dripGems, 5000);
+			// spawn a little starting wave of gems
+			for (var i = 0; i < 5; ++i)
+				setTimeout(dripGems, 200*i);
 		}
 	});
 	
@@ -159,17 +175,16 @@ function setupSocket() {
 			// this makes matter correctly calculate its weight, volume, etc. phys properties
 			switch(data.label) {
 				case "Circle Body":
-						objToMakeOrUpdate = Bodies.circle(data.position.x, data.position.y, data.circleRadius);
+						objToMakeOrUpdate = Bodies.circle(data.position.x, data.position.y, data.circleRadius, { id: data.id } );
 						break;
 				default:
-						objToMakeOrUpdate = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y);
+						objToMakeOrUpdate = Bodies.rectangle(data.position.x, data.position.y, data.bounds.max.x - data.bounds.min.x, data.bounds.max.y - data.bounds.min.y, { id: data.id } );
 						break;
 			}
 			
 			Matter.Body.set(objToMakeOrUpdate, data);
 			
-			// force some variables to be sets
-			objToMakeOrUpdate.id = data.id;
+			// force some variables to be set
 			objToMakeOrUpdate.atRest = -1;
 			objToMakeOrUpdate.atRestCount = 0;
 			
@@ -268,6 +283,11 @@ function initializeGame() {
 	if (IS_HOST && !gameInitialized) {
 		setupWorld();
 		setInterval(emitBodies, 1000/10);
+		setInterval(dripGems, 5000);
+		// spawn a little starting wave of gems
+		for (var i = 0; i < 5; ++i)
+			setTimeout(dripGems, 200*i);
+		
 		gameInitialized = true;
 	}
 	
@@ -364,8 +384,8 @@ function initializeInput() {
 		// prep the new body
 		var newBody = Bodies.circle(player.lastClick.x, player.lastClick.y, player.currentAbility.objRadius);
 		var vel = {
-				x: clamp((player.lastClick.x - player.pos.x)/8, -15, 15),
-				y: clamp((player.lastClick.y - player.pos.y)/8, -15, 15)
+				x: clamp((player.lastClick.x - player.pos.x) * player.currentAbility.launchScaling, -15, 15),
+				y: clamp((player.lastClick.y - player.pos.y) * player.currentAbility.launchScaling, -15, 15)
 			};
 		
 		// apply velocity and render options to the new body	
@@ -463,30 +483,18 @@ function setupWorld() {
 	
 	// static world objects
 	var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
-	var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
-	var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: "#600960" }});
+	var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
 	var leftWall = Bodies.rectangle(-10, -canvas.height, 20, canvas.height*4, { isStatic: true, render: { strokeStyle: '#000' } } );
 	var rightWall = Bodies.rectangle(canvas.width + 10, -canvas.height, 20, canvas.height*4, { isStatic: true, render: { strokeStyle: '#000' } } );
 	
 	// platforms
-	var leftTiltPlatform = Bodies.rectangle(canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
-	var rightTiltPlatform = Bodies.rectangle(canvas.width - canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
+	var leftTiltPlatform = Bodies.rectangle(canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	var rightTiltPlatform = Bodies.rectangle(canvas.width - canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
 	Body.setAngle(leftTiltPlatform, (20/360) * Math.PI);
 	Body.setAngle(rightTiltPlatform, (-20/360) * Math.PI);
 	
 	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform]);
-	
-	// add some starting objects
-	for (var i = 0; i < 5; i++) {
-		var newGem = Bodies.rectangle(
-			(Math.random() * canvas.width),
-			(Math.random() * canvas.height/2),
-			gemRad,
-			gemRad
-		);
-		
-		add(newGem);
-	}
 }
 
 // Process a Matter body and returns a slimmed down version of it
@@ -567,6 +575,28 @@ function emitBodies() {
 	globalIteration = (globalIteration + 1) % 10;
 }
 	
+// Drops scoring gems into the world periodically
+function dripGems() {
+	// the green neutral gem always spawns
+	var greenGem = Bodies.circle(canvas.width/2 + (Math.random()*20 - 10), -10, gemRad);
+	greenGem.render.sprite.texture = IMAGES.GREEN_GEM;
+	add(greenGem);
+		
+	// the player-specific gems only spawn on all gem frames
+	if (allGemFrame) {
+		var orangeGem = Bodies.circle(canvas.width/3 + (Math.random()*20 - 10), -10, gemRad);
+		orangeGem.render.sprite.texture = IMAGES.ORANGE_GEM;
+		
+		var purpleGem = Bodies.circle(2*canvas.width/3 + (Math.random()*20 - 10), -10, gemRad);
+		purpleGem.render.sprite.texture = IMAGES.PURPLE_GEM;
+		
+		add([orangeGem, purpleGem]);
+	}
+	
+	// next spawn frame does opposite
+	allGemFrame = !allGemFrame;
+}
+	
 // FUNCTION: update local game instance
 function update() {
 	// emit player position
@@ -598,7 +628,7 @@ function update() {
 					Body.setAngularVelocity(obj, .1);
 					
 					// remove if lifetime over
-					if (lifetime <= 0) {
+					if (obj.objectType.lifetime <= 0) {
 						socket.emit(
 							"requestRemoveBody",
 							processBody(obj)
@@ -644,6 +674,6 @@ function draw() {
 	ctxUI.closePath();
 }
 
-window.onload = setupSocket;
+window.addEventListener("load", setupSocket);
 
 })();
