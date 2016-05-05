@@ -17,13 +17,8 @@ class InputManager {
 	// Notifies other users of player ability change
 	onAbilityChange(socket) {
 		socket.on("abilityChange", function(data) {
-			// try to only send data to correct user
-			if (socket == this.p1) {
-				this.p2.emit("abilityChange", data);
-			}
-			else {
-				this.p1.emit("abilityChange", data);
-			}
+			// send data to other user
+			socket.broadcast.to(socket.room).emit("abilityChange", data);
 		}.bind(this));
 	}
 }

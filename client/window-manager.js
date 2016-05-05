@@ -30,7 +30,6 @@ game.windowManager = (function(){
 	
 	// FUNCTION: update and draw window
 	function updateAndDraw(trackers) {
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		for (var i=0; i < uiElements.length; i++){
 			uiElements[i].updateAndDraw(trackers);
 		}

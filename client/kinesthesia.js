@@ -10,9 +10,9 @@ game.main = (function() {
 var socket;
 
 // game canvas and context
-var canvas;
+var canvas, canvasUI;
+var ctx, ctxUI;
 var canvasPos;
-var ctx;
 var serverInfo
 var windowManager = game.windowManager; // reference to the engine's window manager
 
@@ -41,9 +41,15 @@ var ABILITIES = {
 
 // size constants
 var gemRad = 15;
-var IS_HOST = false;
 var gameInitialized = false;
-var lastClick = {};
+var IS_HOST = false;
+
+// represents the colors of each side (sides 0 and 1)
+// can reference own color with COLORS[player.side]
+var COLORS = {
+	0: "#D6861A",
+	1: "#600960"
+};
 
 // used to control frames in which resting objects are emitted
 // resting objects are occasionally forcibly emitted at times based on the frame they fall asleep
@@ -63,7 +69,8 @@ var player = {
 		y: -100
 	},
 	currentAbility: ABILITIES['CANNONBALL'],
-	score: 0
+	score: 0,
+	lastClick: undefined
 };
 
 // info about opponent
@@ -75,7 +82,8 @@ var opponent = {
 		y: -100
 	},
 	currentAbility: ABILITIES['CANNONBALL'],
-	score: 0
+	score: 0,
+	lastClick: undefined
 };
 
 //} GAME VARS
@@ -104,6 +112,7 @@ function setupSocket() {
 	socket.on("notifyHost", function() {
 		IS_HOST = true;
 		
+		// if game init was called before we knew we were the host, do host stuff now
 		if (gameInitialized) {
 			setupWorld();
 			setInterval(emitBodies, 1000/10);
@@ -170,38 +179,24 @@ function setupSocket() {
 		}
 	});
 	
-	// Callback for update from manager
-	socket.on("update", function(data) {
-		// which object is being updated
-		switch (data.object) {
-			case "player":
-				if (data.pos) {
-					player.pos = data.pos;
-				}
-				if (data.name) {
-					player.name = data.name;
-				}
-				if (data.side) {
-					player.side = data.side;
-				}
-				if (data.grabbed != null) {
-					player.grabbed = data.grabbed;
-				}
-				break;
-			case "opponent":
-				if (data.pos) {
-					opponent.pos = data.pos;
-				}
-				if (data.name) {
-					opponent.name = data.name;
-				}
-				if (data.side) {
-					opponent.side = data.side;
-				}
-				if(data.grabbed != null) {
-					opponent.grabbed = data.grabbed;
-				}
-				break;
+	// Callback for update from other user sent by manager
+	socket.on("updateOther", function(data) {
+		// apply all keys in the data object to they opponent
+		for (var key in data) {
+			opponent[key] = data[key];
+		}
+		
+		// explicitly check lastClick so it applies correctly
+		if (data.lastClick == undefined) {
+			opponent.lastClick = undefined;
+		}
+	});
+	
+	// Callback for update on own info sent by manager
+	socket.on("updateSelf", function(data) {
+		// apply all keys in the data object to they opponent
+		for (var key in data) {
+			player[key] = data[key];
 		}
 	});
 	
@@ -266,7 +261,7 @@ function initializeGame() {
 	initializeInput();
 	setupUI();
 	
-	// The host starts up the world and begins an update loop
+	// The host starts up the world and begins an object emission loop
 	if (IS_HOST && !gameInitialized) {
 		setupWorld();
 		setInterval(emitBodies, 1000/10);
@@ -308,15 +303,11 @@ function initializeMatter() {
 	});
 	
 	// get reference to game canvas and context
-	canvas = document.querySelector("canvas");
-	canvasPos = canvas.getBoundingClientRect();
+	canvas = document.querySelector('canvas');
+	canvasUI = document.querySelector('#UI');
 	ctx = canvas.getContext("2d");
-	
-	// setup canvas mouse movement behavior
-	document.addEventListener('mousemove', function(e) {
-		player.pos.x = clamp(e.x - canvasPos.left, 0, canvas.width);
-		player.pos.y = clamp(e.y - canvasPos.top, 0, canvas.height);
-	});
+	ctxUI = canvasUI.getContext("2d");
+	canvasPos = canvas.getBoundingClientRect();
 	
 	Matter.Runner.run(engine);
 }
@@ -331,10 +322,25 @@ function initializeInput() {
 		e.stopPropagation();
 		e.preventDefault();
 		
-		player.pos.x = clamp(e.layerX, 0, canvas.width);
-		player.pos.y = clamp(e.layerY, 0, canvas.height);
+		// update player click position
+		var rect = canvasUI.getBoundingClientRect();
+		player.pos = {
+			x: Math.floor(e.clientX - rect.left),
+			y: Math.floor(e.clientY - rect.top)
+		};
 		
-		lastClick = { x: player.pos.x, y: player.pos.y };
+		player.lastClick = { x: player.pos.x, y: player.pos.y };
+	});
+	
+	// canvas mouse move for dragging before launching object
+	document.addEventListener('mousemove', function(e) {
+		
+		// update player click position
+		var rect = canvasUI.getBoundingClientRect();
+		player.pos = {
+			x: Math.floor(e.clientX - rect.left),
+			y: Math.floor(e.clientY - rect.top)
+		};
 	});
 	
 	// setup canvas mouse up behavior
@@ -342,30 +348,31 @@ function initializeInput() {
 		// only accept left clicks here
 		if (e.which != 1) return;
 		
-		player.pos.x = clamp(e.layerX, 0, canvas.width);
-		player.pos.y = clamp(e.layerY, 0, canvas.height);
+		// update player click position
+		var rect = canvasUI.getBoundingClientRect();
+		player.pos = {
+			x: Math.floor(e.clientX - rect.left),
+			y: Math.floor(e.clientY - rect.top)
+		};
 						
-		// make sure lastClick has been declared, otherwise declare and bail out
-		if (lastClick == undefined) {
-			lastClick = player.pos;
-			
-			return;
-		}
+		// make sure player.lastClick has been declared (the mousedown was captured), otherwise bail out
+		if (player.lastClick == undefined) { return; }
 		
 		// prep the new body
-		var newBody = Bodies.circle(lastClick.x, lastClick.y, player.currentAbility.objRadius);
+		var newBody = Bodies.circle(player.lastClick.x, player.lastClick.y, player.currentAbility.objRadius);
 		var vel = {
-				x: Math.min(20, Math.abs(lastClick.x - player.pos.x)) * Math.sign(lastClick.x - player.pos.x),
-				y: Math.min(20, Math.abs(lastClick.y - player.pos.y)) * Math.sign(lastClick.y - player.pos.y)
+				x: clamp((player.lastClick.x - player.pos.x)/8, -15, 15),
+				y: clamp((player.lastClick.y - player.pos.y)/8, -15, 15)
 			};
 		
-		// apply velocity and render options to the new body
-			
+		// apply velocity and render options to the new body	
 		Body.setVelocity(newBody, vel);
 		newBody.objectType = player.currentAbility;
 		newBody.render.sprite.texture = player.currentAbility.src;
 		
+		// push the body and reset our last click to stop drawing the line
 		add(newBody);
+		player.lastClick = undefined;
 	});
 
 	// prevent right click menu on canvas
@@ -446,8 +453,8 @@ function setupWorld() {
 	// platforms
 	var leftTiltPlatform = Bodies.rectangle(canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
 	var rightTiltPlatform = Bodies.rectangle(canvas.width - canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: "#D6861A" }});
-	Body.setAngle(leftTiltPlatform, (20/360) * 3.14159);
-	Body.setAngle(rightTiltPlatform, (-20/360) * 3.14159);
+	Body.setAngle(leftTiltPlatform, (20/360) * Math.PI);
+	Body.setAngle(rightTiltPlatform, (-20/360) * Math.PI);
 	
 	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform]);
 	
@@ -542,11 +549,44 @@ function emitBodies() {
 // FUNCTION: update local game instance
 function update() {
 	// emit player position
-	socket.emit("update", {pos: player.pos});
+	socket.emit("update", { pos: player.pos, lastClick: player.lastClick });
+	
+	// draw UI
+	ctxUI.clearRect(0, 0, canvasUI.width, canvasUI.height);
+	draw();
 	game.windowManager.updateAndDraw([]);
 	
 	// request next frame
 	requestAnimationFrame(update);
+}
+
+// DRAW FUNCTION: draws some bits to the UI that aren't easy for the window manager
+function draw() {
+	// draw opponent's draw line if they're currently dragging
+	ctxUI.strokeStyle = ctxUI.fillStyle = COLORS[opponent.side];
+	if (opponent.lastClick) {
+		ctxUI.beginPath();	
+		ctxUI.moveTo(opponent.lastClick.x, opponent.lastClick.y);
+		ctxUI.lineTo(opponent.pos.x, opponent.pos.y);
+		ctxUI.stroke();
+	}
+	ctxUI.beginPath();	
+	ctxUI.arc(opponent.pos.x, opponent.pos.y, 5, 0, Math.PI * 2);
+	ctxUI.fill();
+	ctxUI.closePath();
+	
+	// draw our own draw line if we're currently dragging
+	ctxUI.strokeStyle = ctxUI.fillStyle = COLORS[player.side];
+	if (player.lastClick) {
+		ctxUI.beginPath();
+		ctxUI.moveTo(player.lastClick.x, player.lastClick.y);
+		ctxUI.lineTo(player.pos.x, player.pos.y);
+		ctxUI.stroke();
+	}
+	ctxUI.beginPath();	
+	ctxUI.arc(player.pos.x, player.pos.y, 5, 0, Math.PI * 2);
+	ctxUI.fill();
+	ctxUI.closePath();
 }
 
 window.onload = setupSocket;

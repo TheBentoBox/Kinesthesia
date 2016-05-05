@@ -26,8 +26,8 @@ class GameManager {
 		this.p1.score = 0;
 		this.p2 = player2;
 		this.p2.score = 0;
-		this.lastTime = new Date().getTime();
-		this.frames = 0;
+		this.p1.room = this.room;
+		this.p2.room = this.room;
 		
 		// Pass new players to event handlers
 		this.onUpdate(this.p1);
@@ -51,80 +51,40 @@ class GameManager {
 			y: 640
 		};
 		
-		// set players to default starting locations
-		this.p1.pos = {
-			x: 15,
-			y: this.screen.y / 2
-		};
-		this.p2.pos = {
-			x: this.screen.x - 15,
-			y: this.screen.y / 2
-		};
-		
 		// tell player 1 they're the host
 		this.p1.emit("notifyHost");
 		
-		// randomly create gems
-		this.gems = [];
-		
 		// update player 1
 		this.p1.emit("serverInfo", {msg: "Game started. You are playing against " + this.p2.name + "."});
+		this.p1.emit("updateSelf", { side: 0 });
 		this.p1.emit(
-			"update",
+			"updateOther",
 			{
-				object: "player",
-				pos: this.p1.pos,
-				side: 0
-			}
-		);
-		this.p1.emit(
-			"update",
-			{
-				object: "opponent",
 				name: this.p2.name,
-				pos: this.p2.pos,
 				side: 1
 			}
 		);
 		
 		// update player 2
 		this.p2.emit("serverInfo", {msg: "Game started. You are playing against " + this.p1.name + "."});
+		this.p2.emit("updateSelf", { side: 1 });
 		this.p2.emit(
-			"update",
+			"updateOther",
 			{
-				object: "player",
-				pos: this.p2.pos,
-				side: 1
-			}
-		);
-		this.p2.emit(
-			"update",
-			{
-				object: "opponent",
 				name: this.p1.name,
-				pos: this.p1.pos,
 				side: 0
 			}
 		);
 		
 		// start player update loops
 		this.io.sockets.in(this.room).emit("play");
-		
-		// begin the update loop
-		//setInterval(this.gameLoop.bind(this), 1000/60);
 	}
 	
 	// Callback for user update
 	onUpdate(socket) {
 		socket.on("update", function(data) {
 			socket.pos = data.pos;
-			socket.broadcast.to(socket.room).emit(
-				"update", 
-				{ 
-					object: "opponent", 
-					pos: data.pos 
-				}
-			);
+			socket.broadcast.to(this.room).emit("updateOther", data);
 		});
 	}
 	
