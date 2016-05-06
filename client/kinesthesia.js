@@ -27,21 +27,23 @@ var ABILITIES = {
 		src: "assets/images/iconCannonball.png",
 		objRadius: 18,
 		lifetime: 1200,
-		launchScaling: 0.15
+		launchScaling: 0.3
 	},
 	GRENADE: {
 		name: "Grenade",
 		src: "assets/images/iconGrenade.png",
 		objRadius: 18,
-		lifetime: 180,
-		launchScaling: 0.125
+		lifetime: 120,
+		launchScaling: 0.125,
+		maxForce: 1.5
 	},
 	GRAVITY_WELL: {
 		name: "Gravity Well",
 		src: "assets/images/iconGravityWell.png",
 		objRadius: 15,
 		lifetime: 300,
-		launchScaling: 0.015
+		launchScaling: 0.015,
+		maxForce: 0.1
 	}
 };
 
@@ -645,6 +647,24 @@ function update() {
 					
 					// explode if lifetime over
 					if (obj.objectType.lifetime <= 0 && IS_HOST) {
+						// make grenade blow away objects
+						for (var j = 0; j < allObj.length; j++) {
+							if (i != j) {
+								// grab other object in world
+								var other = allObj[j];
+								
+								// calculate explosive force
+								var exploDir = Vector.sub(other.position, obj.position);
+								var exploIntensity = obj.objectType.maxForce / Math.max(Vector.magnitude(exploDir), 20);
+								exploDir = Vector.normalise(exploDir);
+								var exploForce = Vector.mult(exploDir, exploIntensity);
+								
+								// apply force
+								Body.applyForce(other, other.position, exploForce);
+							}
+						}
+						
+						// remove grenade
 						socket.emit(
 							"requestRemoveBody",
 							processBody(obj)
@@ -667,7 +687,7 @@ function update() {
 							
 							// calculate point gravity
 							var gravDir = Vector.sub(obj.position, other.position);
-							var gravIntensity = 0.1 / Math.max(Vector.magnitude(gravDir), 5);
+							var gravIntensity = obj.objectType.maxForce / Math.max(Vector.magnitude(gravDir), 5);
 							gravDir = Vector.normalise(gravDir);
 							var gravForce = Vector.mult(gravDir, gravIntensity);
 							
