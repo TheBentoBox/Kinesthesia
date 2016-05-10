@@ -7,7 +7,7 @@ block append content
         a.navlink(href="/signup") Sign up
       form#loginForm(class="mainForm", name="loginForm", action="/login", method="POST")
         label(for="username") Username: 
-        input#user(type="text", name="username", placeholder="username")
+        input#user(autofocus, selected, type="text", name="username", placeholder="username")
         <br />
         label(for="pass") Password: 
         input#pass(type="password", name="pass", placeholder="password")

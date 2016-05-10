@@ -531,11 +531,7 @@ function setupWorld() {
 	Body.setAngle(leftTiltPlatform, (20/360) * Math.PI);
 	Body.setAngle(rightTiltPlatform, (-20/360) * Math.PI);
 	
-	// goal sensors
-	var leftGoal = Bodies.rectangle(75, canvas.height - 75, 150, 130, { isSensor: true });
-	var rightGoal = Bodies.rectangle(canvas.width - 75, canvas.height - 75, 150, 130, { isSensor: true });
-	
-	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform, leftGoal, rightGoal]);
+	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform]);
 }
 
 // Process a Matter body and returns a slimmed down version of it
@@ -550,7 +546,6 @@ function processBody(physBody) {
 		restitution: physBody.restitution,
 		render: physBody.render,
 		isStatic: physBody.isStatic,
-		isSensor: physBody.isSensor,
 		collisionFilter: physBody.collisionFilter,
 		circleRadius: physBody.circleRadius,
 		time: new Date().getTime(),
