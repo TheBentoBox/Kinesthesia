@@ -399,6 +399,28 @@ function initializeInput() {
 				x: clamp((player.lastClick.x - player.pos.x) * player.currentAbility.launchScaling, -15, 15),
 				y: clamp((player.lastClick.y - player.pos.y) * player.currentAbility.launchScaling, -15, 15)
 			};
+			
+		// make sure it has a unique ID
+		var bodyIDFound = false;
+		var highestFoundID = -1;
+		for (var i = 0; i < engine.world.bodies.length; ++i) {
+			var body = engine.world.bodies[i];
+			
+			// store highest ID
+			if (body.id > highestFoundID) {
+				highestFoundID = body.id;
+			}
+			
+			// check if it's the same ID as the one we just created
+			if (body.id == newBody.id) {
+				bodyIDFound = true;
+			}
+		}
+		
+		// re-assign a new ID if we found ours was already taken
+		if (bodyIDFound) {
+			newBody.id = highestFoundID + 1;
+		}
 		
 		// apply velocity and render options to the new body	
 		Body.setVelocity(newBody, vel);
@@ -509,7 +531,11 @@ function setupWorld() {
 	Body.setAngle(leftTiltPlatform, (20/360) * Math.PI);
 	Body.setAngle(rightTiltPlatform, (-20/360) * Math.PI);
 	
-	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform]);
+	// goal sensors
+	var leftGoal = Bodies.rectangle(75, canvas.height - 75, 150, 130, { isSensor: true });
+	var rightGoal = Bodies.rectangle(canvas.width - 75, canvas.height - 75, 150, 130, { isSensor: true });
+	
+	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform, leftGoal, rightGoal]);
 }
 
 // Process a Matter body and returns a slimmed down version of it
