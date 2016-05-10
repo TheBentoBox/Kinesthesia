@@ -18,7 +18,10 @@ function connectChat() {
 	// listener for msg event
 	socket.on('msg', function(data) {
 		
-		chatWindow.innerHTML += "<p class='otherUserMsg''><strong>" + data.name + "</strong>: " + data.msg + "</p>";
+		var p = document.createElement("p");
+		p.textContent = data.name + ": " + data.msg;
+		p.className += "otherUserMsg";
+		chatWindow.appendChild(p);
 	});
 	
 	// allow users to send messages (with the enter key)
@@ -30,7 +33,10 @@ function connectChat() {
 				return;
 			}
 			
-			chatWindow.innerHTML += "<p class='userMsg'>" + chatInput.value + "</p>";
+			var p = document.createElement("p");
+			p.textContent = chatInput.value;
+			p.className += "userMsg";
+			chatWindow.appendChild(p);
 			socket.emit('chatMsg', { name: userdata.username, msg: chatInput.value } );
 			chatWindow.scrollTop = chatWindow.scrollHeight - chatWinHeight;
 			chatInput.value = "";
