@@ -649,6 +649,12 @@ function update() {
 	for (var i = 0; i < allObj.length; i++) {
 		var obj = allObj[i];
 		if (obj.objectType) {
+			// check for objects that are supposed to be dead, and forcibly remove them
+			if (obj.objectType.lifetime < 0) {
+				Matter.Composite.remove(engine.world, obj);
+				continue;
+			}
+			
 			switch (obj.objectType.name) {
 				case "Cannonball":
 					// decrement lifetime
