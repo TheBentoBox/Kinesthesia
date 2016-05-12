@@ -70,8 +70,10 @@ var goal = {
 var COLORS = {
 	0: "#D6861A",
 	1: "#600960",
+	2: "#09EC09",
 	ORANGE: "#D6861A",
-	PURPLE: "#600960"
+	PURPLE: "#600960",
+	GREEN: "#09EC09"
 };
 
 // used to control frames in which resting objects are emitted
@@ -623,15 +625,27 @@ function dripGems() {
 	// the green neutral gem always spawns
 	var greenGem = Bodies.circle(canvas.width/2 + (Math.random()*20 - 10), -10, gemRad);
 	greenGem.render.sprite.texture = IMAGES.GREEN_GEM;
+	greenGem.objectType = {
+		name: "Gem",
+		color: COLORS.GREEN
+	};
 	add(greenGem);
 		
 	// the player-specific gems only spawn on all gem frames
 	if (allGemFrame) {
 		var orangeGem = Bodies.circle(canvas.width/3 + (Math.random()*20 - 10), -10, gemRad);
 		orangeGem.render.sprite.texture = IMAGES.ORANGE_GEM;
+		orangeGem.objectType = {
+			name: "Gem",
+			color: COLORS.ORANGE
+		};
 		
 		var purpleGem = Bodies.circle(2*canvas.width/3 + (Math.random()*20 - 10), -10, gemRad);
 		purpleGem.render.sprite.texture = IMAGES.PURPLE_GEM;
+		purpleGem.objectType = {
+			name: "Gem",
+			color: COLORS.PURPLE
+		};
 		
 		add([orangeGem, purpleGem]);
 	}
@@ -731,8 +745,9 @@ function update() {
 						);
 					}
 					break;
-				default:
+				case "Gem":
 					if (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width) {
+						console.log("X: " + obj.position.x + ", Y: " + obj.position.y);
 						if (obj.position.y >= canvas.height - goal.height) {
 							socket.emit(
 								"requestRemoveBody",
@@ -740,6 +755,8 @@ function update() {
 							);
 						}
 					}
+					break;
+				default:
 					break;
 			}
 		}
