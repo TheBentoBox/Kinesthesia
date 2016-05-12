@@ -257,14 +257,14 @@ function setupSocket() {
 	socket.on("score", function(data) {
 		// player point
 		if (data.side === player.side) {
-			msgBox.innerHTML = player.name + " scores a point!";
-			player.score++;
+			serverInfo.innerHTML = userdata.username + " scores a point!";
+			player.score += data.points;
 		}
 		// opponent point
 		else {
-			msgBox.innerHTML = opponent.name + " scores a point!";
-			opponent.score++;
-		}
+			serverInfo.innerHTML = opponent.name + " scores a point!";
+			opponent.score += data.points;
+		}	
 	});
 	
 	// Callback for game end
@@ -775,9 +775,81 @@ function update() {
 					}
 					break;
 				case "Gem":
-					if (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width) {
-						console.log("X: " + obj.position.x + ", Y: " + obj.position.y);
+					// check if gem is within goal region
+					if (IS_HOST && (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width)) {
 						if (obj.position.y >= canvas.height - goal.height) {
+							// check if in host goal
+							if (obj.position.x <= goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 1
+											}
+										);
+										break;
+									case COLORS.GREEN:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 2
+											}
+										);
+										break;
+									case COLORS.PURPLE:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 3
+											}
+										);
+										break;
+									default:
+										break;
+								}
+							}
+							
+							// check if in client goal
+							else if (obj.position.x >= canvas.width - goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 3
+											}
+										);
+										break;
+									case COLORS.GREEN:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 2
+											}
+										);
+										break;
+									case COLORS.PURPLE:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 1
+											}
+										);
+										break;
+									default:
+										break;
+								}
+							}
+							
 							socket.emit(
 								"requestRemoveBody",
 								processBody(obj)

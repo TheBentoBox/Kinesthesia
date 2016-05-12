@@ -43,6 +43,9 @@ class GameManager {
 		
 		this.onHostEmit(this.p1);
 		
+		this.onScore(this.p1);
+		this.onScore(this.p2);
+		
 		//this.onDisconnect(this.p1);
 		//this.onDisconnect(this.p2);
 		
@@ -118,65 +121,11 @@ class GameManager {
 		return Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
 	}
 	
-	// Check gems to see if a point has been scored
-	checkScore() {
-		for (var i = 0; i < this.gems.length; i++) {
-			// player 1 scores
-			if(this.gems[i].x < (this.goalWidth - this.gemRad)) {
-				// remove scored gem
-				this.gems.splice(i, 1);
-				i--;
-				
-				// notify of score
-				this.io.sockets.in(this.room).emit(
-					"update",
-					{
-						object: "gems",
-						gems: this.gems
-					}
-				);
-				
-				this.io.sockets.in(this.room).emit("score", {side: 0});
-				this.p1.score++;
-			}
-			
-			// player 2 scores
-			else if(this.gems[i].x > (this.screen.x - this.goalWidth + this.gemRad)) {
-				// remove scored gem
-				this.gems.splice(i, 1);
-				i--;
-				
-				// notify of score
-				this.io.sockets.in(this.room).emit(
-					"update",
-					{
-						object: "gems",
-						gems: this.gems
-					}
-				);
-				
-				this.io.sockets.in(this.room).emit("score", {side: 1});
-				this.p2.score++;
-			}
-		}
-		
-		// check for win
-		if(this.gems.length === 0) {
-			// player 1 wins
-			if(this.p1.score > this.p2.score) {
-				this.io.sockets.in(this.room).emit("end", {side: 0});
-			}
-			
-			// player 2 wins
-			else if(this.p2.score > this.p1.score) {
-				this.io.sockets.in(this.room).emit("end", {side: 1});
-			} 
-			
-			// tie
-			else {
-				this.io.sockets.in(this.room).emit("end", {side: 2});
-			} 
-		}
+	// Callback for scoring
+	onScore(socket) {
+		socket.on("score", function(data) {
+			this.io.sockets.in(this.room).emit("score", data);
+		}.bind(this));
 	}
 }
 
