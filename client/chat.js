@@ -19,8 +19,11 @@ function connectChat() {
 	socket.on('msg', function(data) {
 		
 		var p = document.createElement("p");
-		p.textContent = data.name + ": " + data.msg;
+		var pMsg = document.createElement("span");
+		p.innerHTML = "<strong>" + data.name + "</strong>: ";
 		p.className += "otherUserMsg";
+		pMsg.textContent = data.msg;
+		p.appendChild(pMsg);
 		chatWindow.appendChild(p);
 	});
 	
