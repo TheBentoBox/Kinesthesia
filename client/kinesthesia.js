@@ -59,11 +59,13 @@ var gameInitialized = false; // whether main object loop has started, only relev
 var IS_HOST = false; // whether this user is the host
 var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
 
-// dimensions of the goal area
+// dimensions of the goal area and other world statics
 var goal = {
 	width: 150,
-	height: 300
+	height: 200
 }
+var groundHeight = 20;
+var goalWallWidth = 50;
 
 // represents the colors of each side (sides 0 and 1)
 // can reference own color with COLORS[player.side]
@@ -526,20 +528,41 @@ function setupUI() {
 // INITAL GAME SETUP: sets up starting world objects
 function setupWorld() {
 	
-	// static world objects
-	var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
-	var p1Wall = Bodies.rectangle(150, canvas.height - 170, 20, 300, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
-	var p2Wall = Bodies.rectangle(canvas.width - 150, canvas.height - 170, 20, 300, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
+	//=== Static world objects
+	// Player 1's goal walls
+	var p1WallLower = Bodies.rectangle(goal.width + goalWallWidth/2, canvas.height - groundHeight/2 - goal.height/2, goalWallWidth, goal.height + groundHeight, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	var p1WallUpper = Bodies.rectangle(goal.width + goalWallWidth/2, goal.height/2, goalWallWidth, goal.height, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	// Player 2's goal walls
+	var p2WallLower = Bodies.rectangle(canvas.width - goal.width - goalWallWidth/2, canvas.height - groundHeight/2 - goal.height/2, goalWallWidth, goal.height + groundHeight, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
+	var p2WallUpper = Bodies.rectangle(canvas.width - goal.width - goalWallWidth/2, goal.height/2, goalWallWidth, goal.height, { isStatic: true, render: { fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
+	// Main retaining walls & ground
 	var leftWall = Bodies.rectangle(-10, -canvas.height, 20, canvas.height*4, { isStatic: true, render: { strokeStyle: '#000' } } );
 	var rightWall = Bodies.rectangle(canvas.width + 10, -canvas.height, 20, canvas.height*4, { isStatic: true, render: { strokeStyle: '#000' } } );
+	var ground = Bodies.rectangle(canvas.width/2, canvas.height + 50, canvas.width*1.5, 140, { isStatic: true, render: { fillStyle: "#000" }});
+	// Ceiling pieces
+	var leftCeilingPiece = Bodies.rectangle(canvas.width/7 - 50, -20, canvas.width/3.5, 41, { isStatic: true, render: { strokeStyle: '#000' } });
+	var middleCeilingPieceL = Bodies.rectangle(canvas.width/2 - 100, -20, canvas.width/7 - 25, 41, { isStatic: true, render: { strokeStyle: '#000' } });
+	var middleCeilingPieceR = Bodies.rectangle(canvas.width/2 + 100, -20, canvas.width/7 - 25, 41, { isStatic: true, render: { strokeStyle: '#000' } });
+	var rightCeilingPiece = Bodies.rectangle(canvas.width - canvas.width/7 + 50, -20, canvas.width/3.5, 41, { isStatic: true, render: { strokeStyle: '#000' } });
+	// Gem funnels
+	var leftFunnelL = Bodies.rectangle(canvas.width/3.5 - 50, canvas.height/4 - 25, 125, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	var leftFunnelR = Bodies.rectangle(canvas.width/3.5 + 50, canvas.height/4 - 25, 125, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	var middleFunnelL = Bodies.rectangle(canvas.width/2 - 50, canvas.height/4 - 25 - canvas.height/10, 125, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.GREEN }});
+	var middleFunnelR = Bodies.rectangle(canvas.width/2 + 50, canvas.height/4 - 25 - canvas.height/10, 125, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.GREEN }});
+	var rightFunnelL = Bodies.rectangle(canvas.width - canvas.width/3.5 - 50, canvas.height/4 - 25, 125, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
+	var rightFunnelR = Bodies.rectangle(canvas.width - canvas.width/3.5 + 50, canvas.height/4 - 25, 125, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
+	Body.setAngle(leftFunnelL, (60/360) * Math.PI*2);
+	Body.setAngle(leftFunnelR, (-60/360) * Math.PI*2);
+	Body.setAngle(middleFunnelL, (60/360) * Math.PI*2);
+	Body.setAngle(middleFunnelR, (-60/360) * Math.PI*2);
+	Body.setAngle(rightFunnelL, (60/360) * Math.PI*2);
+	Body.setAngle(rightFunnelR, (-60/360) * Math.PI*2);
+	// Gem platforms
+	var leftGemPlatform = Bodies.rectangle(canvas.width/3.5, canvas.height*0.75, 175, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
+	var middleGemPlatform = Bodies.rectangle(canvas.width/2, canvas.height*0.65, 175, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.GREEN }});
+	var rightGemPlatform = Bodies.rectangle(canvas.width - canvas.width/3.5, canvas.height*0.75, 175, 10, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.PURPLE}});
 	
-	// platforms
-	var leftTiltPlatform = Bodies.rectangle(canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.ORANGE }});
-	var rightTiltPlatform = Bodies.rectangle(canvas.width - canvas.width/3.5, canvas.height/4, 225, 1, { isStatic: true, render:{ fillStyle: "#000000", strokeStyle: COLORS.PURPLE }});
-	Body.setAngle(leftTiltPlatform, (20/360) * Math.PI);
-	Body.setAngle(rightTiltPlatform, (-20/360) * Math.PI);
-	
-	add ([ground, p1Wall, p2Wall, leftWall, rightWall, leftTiltPlatform, rightTiltPlatform]);
+	add ([p1WallLower, p1WallUpper, p2WallLower, p2WallUpper, leftWall, rightWall, ground, leftCeilingPiece, middleCeilingPieceL, middleCeilingPieceR, rightCeilingPiece, leftFunnelL, leftFunnelR, middleFunnelL, middleFunnelR, rightFunnelL, rightFunnelR, leftGemPlatform, middleGemPlatform, rightGemPlatform]);
 }
 
 // Process a Matter body and returns a slimmed down version of it
@@ -633,14 +656,14 @@ function dripGems() {
 		
 	// the player-specific gems only spawn on all gem frames
 	if (allGemFrame) {
-		var orangeGem = Bodies.circle(canvas.width/3 + (Math.random()*20 - 10), -10, gemRad);
+		var orangeGem = Bodies.circle(canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad);
 		orangeGem.render.sprite.texture = IMAGES.ORANGE_GEM;
 		orangeGem.objectType = {
 			name: "Gem",
 			color: COLORS.ORANGE
 		};
 		
-		var purpleGem = Bodies.circle(2*canvas.width/3 + (Math.random()*20 - 10), -10, gemRad);
+		var purpleGem = Bodies.circle(canvas.width - canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad);
 		purpleGem.render.sprite.texture = IMAGES.PURPLE_GEM;
 		purpleGem.objectType = {
 			name: "Gem",
