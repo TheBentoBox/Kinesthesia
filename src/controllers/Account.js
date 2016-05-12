@@ -72,8 +72,8 @@ var signup = function(req, res) {
 			// now that the account is made and session is started, generate their statistics
 			generateAccountStatistics(req);
 			
-			// send the user to the game page
-			res.json({redirect: '/game'});
+			// send the user to the account page
+			res.json({redirect: '/account'});
 		});
 	});
 };

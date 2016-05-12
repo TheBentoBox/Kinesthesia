@@ -59,6 +59,12 @@ var gameInitialized = false; // whether main object loop has started, only relev
 var IS_HOST = false; // whether this user is the host
 var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
 
+// dimensions of the goal area
+var goal = {
+	width: 150,
+	height: 300
+}
+
 // represents the colors of each side (sides 0 and 1)
 // can reference own color with COLORS[player.side]
 var COLORS = {
@@ -732,6 +738,14 @@ function update() {
 					}
 					break;
 				default:
+					if (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width) {
+						if (obj.position.y >= canvas.height - goal.height) {
+							socket.emit(
+								"requestRemoveBody",
+								processBody(obj)
+							);
+						}
+					}
 					break;
 			}
 		}
