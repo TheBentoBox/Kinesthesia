@@ -114,16 +114,20 @@ h1 {
 	box-shadow: 0px 0px 1px 1px #00DA00;
 }
 
-#chatWindow p.userMsg {
+#chatWindow .userMsg {
 	text-align: right;
 	background-color: #600960;
 	color: #E8CDE8;
 	font-family: courier;
 }
 
-#chatWindow p.otherUserMsg {
+#chatWindow .otherUserMsg {
 	background-color: #D6861A;
 	color: #FFF3E2;
+	font-family: courier;
+}
+
+#chatWindow span {
 	font-family: courier;
 }
 
