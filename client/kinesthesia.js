@@ -27,7 +27,7 @@ var ABILITIES = {
 		src: "assets/images/iconCannonball.png",
 		objRadius: 18,
 		lifetime: 1200,
-		launchScaling: 0.3
+		launchScaling: 0.5
 	},
 	GRENADE: {
 		name: "Grenade",
@@ -537,7 +537,7 @@ function setupUI() {
 		windowManager.makeUI("gameHUD", canvas.width/2 - 150, 0, 300, 75);
 		windowManager.modifyUI("gameHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
 		windowManager.modifyUI("gameHUD", "border", {color: COLORS.GREEN, width: "1px"});
-		windowManager.makeText("gameHUD", "message", 15 , 15, 270, 30, "", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "message", 15 , 15, 230, 30, "", "12pt 'Roboto'", "white");
 		windowManager.makeText("gameHUD", "time", 135, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
 		windowManager.toggleUI("gameHUD");
 	//} end GAME INFO HUD
