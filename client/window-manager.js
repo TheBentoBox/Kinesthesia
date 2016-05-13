@@ -472,7 +472,7 @@ game.windowManager = (function(){
 					var elem = this.subElements.find(trackers[i].name);
 					if(elem != null){
 						elem.trackers = trackers[i].value;
-						bar.target.value = trackers[i].value;
+						//bar.target.value = trackers[i].value;
 					}
 				}
 				

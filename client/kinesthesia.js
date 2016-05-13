@@ -58,6 +58,7 @@ var gemRad = 11; // size of gem bodies (radius)
 var gameInitialized = false; // whether main object loop has started, only relevant for host
 var IS_HOST = false; // whether this user is the host
 var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
+var gameTime = 3600; // time left in this game
 
 // dimensions of the goal area and other world statics
 var goal = {
@@ -257,13 +258,13 @@ function setupSocket() {
 	socket.on("score", function(data) {
 		// player point
 		if (data.side === player.side) {
-			serverInfo.innerHTML = userdata.username + " scores a point!";
+			windowManager.modifyText("gameHUD", "message", "text", {string: userdata.username + " scores a point!", css: "12pt 'Roboto'", color: "white"});
 			player.score += data.points;
 			windowManager.modifyText("playerHUD", "score", "text", {string: player.score.toString(), css: "12pt 'Roboto'", color: "white"});
 		}
 		// opponent point
 		else {
-			serverInfo.innerHTML = opponent.name + " scores a point!";
+			windowManager.modifyText("gameHUD", "message", "text", {string: opponent.name + " scores a point!", css: "12pt 'Roboto'", color: "white"});
 			opponent.score += data.points;
 			windowManager.modifyText("opponentHUD", "score", "text", {string: opponent.score.toString(), css: "12pt 'Roboto'", color: "white"});
 		}	
@@ -531,9 +532,15 @@ function setupUI() {
 	windowManager.makeImage("opponentHUD", "currAbilityImg", 85, 0, 50, 50, opponent.currentAbility.img);
 	windowManager.toggleUI("opponentHUD");
 	//} end OPPONENT INFO HUD
-	
-	console.log(player.score);
-	console.log(opponent.score);
+
+	//{ GAME INFO HUD //
+		windowManager.makeUI("gameHUD", canvas.width/2 - 150, 0, 300, 75);
+		windowManager.modifyUI("gameHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
+		windowManager.modifyUI("gameHUD", "border", {color: COLORS.GREEN, width: "1px"});
+		windowManager.makeText("gameHUD", "message", 15 , 15, 270, 30, "", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "time", 135, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
+		windowManager.toggleUI("gameHUD");
+	//} end GAME INFO HUD
 }
 
 // INITAL GAME SETUP: sets up starting world objects
@@ -696,7 +703,7 @@ function update() {
 	// draw UI
 	ctxUI.clearRect(0, 0, canvasUI.width, canvasUI.height);
 	draw();
-	game.windowManager.updateAndDraw([]);
+	game.windowManager.updateAndDraw([{name: "time", value: [(Math.ceil(gameTime/60)).toString()]}]);
 	
 	// update special game objects
 	var allObj = engine.world.bodies;
@@ -873,6 +880,9 @@ function update() {
 			}
 		}
 	}
+	
+	// increment game time
+	gameTime--;
 	
 	// request next frame
 	requestAnimationFrame(update);
