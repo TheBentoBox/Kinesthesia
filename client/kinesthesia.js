@@ -259,11 +259,13 @@ function setupSocket() {
 		if (data.side === player.side) {
 			serverInfo.innerHTML = userdata.username + " scores a point!";
 			player.score += data.points;
+			windowManager.modifyText("playerHUD", "score", "text", {string: player.score.toString(), css: "12pt 'Roboto'", color: "white"});
 		}
 		// opponent point
 		else {
 			serverInfo.innerHTML = opponent.name + " scores a point!";
 			opponent.score += data.points;
+			windowManager.modifyText("opponentHUD", "score", "text", {string: opponent.score.toString(), css: "12pt 'Roboto'", color: "white"});
 		}	
 	});
 	
@@ -510,19 +512,24 @@ function initializeInput() {
 
 // INITIAL UI SETUP
 function setupUI() {
-	// PLAYER INFO HUD // {
-	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 100), 0, 100, 50);
-	windowManager.makeText("playerHUD", "username", 15 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
-	windowManager.makeImage("playerHUD", "currAbilityImg", 50, 0, 50, 50, player.currentAbility.img);
+	//{ PLAYER INFO HUD //
+	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 150), 0, 150, 50);
+	windowManager.makeText("playerHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
+	windowManager.makeText("playerHUD", "score", 15, 15, 50, 50, player.score.toString(), "12pt 'Roboto'", "white");
+	windowManager.makeImage("playerHUD", "currAbilityImg", 85, 0, 50, 50, player.currentAbility.img);
 	windowManager.toggleUI("playerHUD");
-	// end PLAYER INFO HUD
+	//} end PLAYER INFO HUD
 	
-	// OPPONENT INFO HUD // {
-	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 100), 0, 100, 50);
-	windowManager.makeText("opponentHUD", "username", 15 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Roboto'", "white");
-	windowManager.makeImage("opponentHUD", "currAbilityImg", 50, 0, 50, 50, opponent.currentAbility.img);
+	//{ OPPONENT INFO HUD //
+	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 150), 0, 150, 50);
+	windowManager.makeText("opponentHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Roboto'", "white");
+	windowManager.makeText("opponentHUD", "score", 15, 15, 50, 50, opponent.score.toString(), "12pt 'Roboto'", "white");
+	windowManager.makeImage("opponentHUD", "currAbilityImg", 85, 0, 50, 50, opponent.currentAbility.img);
 	windowManager.toggleUI("opponentHUD");
-	// end OPPONENT INFO HUD }
+	//} end OPPONENT INFO HUD
+	
+	console.log(player.score);
+	console.log(opponent.score);
 }
 
 // INITAL GAME SETUP: sets up starting world objects
