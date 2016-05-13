@@ -67,6 +67,7 @@ var allGemFrame = true; // whether all 3 types of gems will be emitted this fram
 var gameTime = 3600; // time left in this game
 var maxGems = 20; // maximum number of gems allowed onscreen
 var currentGems = 0; // current number of gems onscren
+var gemScoreTime = 300; // time gems need to stay in goal to score
 
 // dimensions of the goal area and other world statics
 var goal = {
@@ -685,7 +686,9 @@ function dripGems() {
 		greenGem.restitution = 0.5;
 		greenGem.objectType = {
 			name: "Gem",
-			color: COLORS.GREEN
+			color: COLORS.GREEN,
+			lifetime: gemScoreTime,
+			inGoal: false
 		};
 		add(greenGem);
 			
@@ -696,7 +699,9 @@ function dripGems() {
 			orangeGem.restitution = 0.5;
 			orangeGem.objectType = {
 				name: "Gem",
-				color: COLORS.ORANGE
+				color: COLORS.ORANGE,
+				lifetime: gemScoreTime,
+				inGoal: false
 			};
 			add(orangeGem);
 			
@@ -706,7 +711,9 @@ function dripGems() {
 				purpleGem.restitution = 0.5;
 				purpleGem.objectType = {
 					name: "Gem",
-					color: COLORS.PURPLE
+					color: COLORS.PURPLE,
+					lifetime: gemScoreTime,
+					inGoal: false
 				};
 				
 				add(purpleGem);
@@ -819,86 +826,102 @@ function update() {
 					}
 					break;
 				case "Gem":
+					// count gem in game this tick
 					++currentGems;
 					
 					// check if gem is within goal region
 					if (IS_HOST && (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width)) {
-						// check if in host goal
-						if (obj.position.x <= goal.width) {
-							// score based on color of gem
-							switch (obj.objectType.color) {
-								case COLORS.ORANGE:
-									socket.emit(
-										"score",
-										{
-											side: player.side,
-											points: 1
-										}
-									);
-									break;
-								case COLORS.GREEN:
-									socket.emit(
-										"score",
-										{
-											side: player.side,
-											points: 2
-										}
-									);
-									break;
-								case COLORS.PURPLE:
-									socket.emit(
-										"score",
-										{
-											side: player.side,
-											points: 3
-										}
-									);
-									break;
-								default:
-									break;
-							}
-						}
+						// set that it is in goal
+						obj.objectType.inGoal = true;
 						
-						// check if in client goal
-						else if (obj.position.x >= canvas.width - goal.width) {
-							// score based on color of gem
-							switch (obj.objectType.color) {
-								case COLORS.ORANGE:
-									socket.emit(
-										"score",
-										{
-											side: opponent.side,
-											points: 3
-										}
-									);
-									break;
-								case COLORS.GREEN:
-									socket.emit(
-										"score",
-										{
-											side: opponent.side,
-											points: 2
-										}
-									);
-									break;
-								case COLORS.PURPLE:
-									socket.emit(
-										"score",
-										{
-											side: opponent.side,
-											points: 1
-										}
-									);
-									break;
-								default:
-									break;
+						// check if gem has finished score time
+						if (obj.objectType.lifetime <= 0) {
+							// check if in host goal
+							if (obj.position.x <= goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 1
+											}
+										);
+										break;
+									case COLORS.GREEN:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 2
+											}
+										);
+										break;
+									case COLORS.PURPLE:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 3
+											}
+										);
+										break;
+									default:
+										break;
+								}
 							}
+							
+							// check if in client goal
+							else if (obj.position.x >= canvas.width - goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 3
+											}
+										);
+										break;
+									case COLORS.GREEN:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 2
+											}
+										);
+										break;
+									case COLORS.PURPLE:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 1
+											}
+										);
+										break;
+									default:
+										break;
+								}
+							}
+							
+							socket.emit(
+								"requestRemoveBody",
+								processBody(obj)
+							);
 						}
-						
-						socket.emit(
-							"requestRemoveBody",
-							processBody(obj)
-						);
+						// else decrement timer
+						else {
+							obj.objectType.lifetime--;
+						}
+					}
+					// else if gem was in goal, reset lifetime
+					else if (obj.objectType.inGoal) {
+						obj.objectType.inGoal = false;
+						obj.objectType.lifetime = gemScoreTime;
 					}
 					break;
 				default:
