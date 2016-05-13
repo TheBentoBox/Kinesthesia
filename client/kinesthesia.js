@@ -65,6 +65,8 @@ var gameInitialized = false; // whether main object loop has started, only relev
 var IS_HOST = false; // whether this user is the host
 var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
 var gameTime = 3600; // time left in this game
+var maxGems = 20; // maximum number of gems allowed onscreen
+var currentGems = 0; // current number of gems onscren
 
 // dimensions of the goal area and other world statics
 var goal = {
@@ -391,10 +393,16 @@ function initializeInput() {
 		
 		// update player click position
 		var rect = canvasUI.getBoundingClientRect();
+		
 		player.pos = {
-			x: clamp(Math.floor(e.clientX - rect.left), player.side*canvas.width/2, (player.side*canvas.width/2) + canvas.width/2),
+			x: Math.floor(e.clientX - rect.left),
 			y: Math.floor(e.clientY - rect.top)
 		};
+		
+		// clamp player x on their side if they're not dragging
+		if (player.lastClick == undefined) {
+			player.pos.x = clamp(player.pos.x, player.side*canvas.width/2, (player.side*canvas.width/2) + canvas.width/2);
+		}
 	});
 	
 	// setup canvas mouse up behavior
@@ -405,7 +413,7 @@ function initializeInput() {
 		// update player click position
 		var rect = canvasUI.getBoundingClientRect();
 		player.pos = {
-			x: clamp(Math.floor(e.clientX - rect.left), player.side*canvas.width/2, (player.side*canvas.width/2) + canvas.width/2),
+			x: Math.floor(e.clientX - rect.left),
 			y: Math.floor(e.clientY - rect.top)
 		};
 						
@@ -668,35 +676,42 @@ function emitBodies() {
 	
 // Drops scoring gems into the world periodically
 function dripGems() {
-	// the green neutral gem always spawns
-	var greenGem = Bodies.circle(canvas.width/2 + (Math.random()*20 - 10), -10, gemRad);
-	greenGem.render.sprite.texture = IMAGES.GREEN_GEM;
-	greenGem.restitution = 0.5;
-	greenGem.objectType = {
-		name: "Gem",
-		color: COLORS.GREEN
-	};
-	add(greenGem);
+	
+	if (currentGems < maxGems) {
 		
-	// the player-specific gems only spawn on all gem frames
-	if (allGemFrame) {
-		var orangeGem = Bodies.circle(canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad, { restitution: 0.3 });
-		orangeGem.render.sprite.texture = IMAGES.ORANGE_GEM;
-		orangeGem.restitution = 0.5;
-		orangeGem.objectType = {
+		// the green neutral gem always spawns
+		var greenGem = Bodies.circle(canvas.width/2 + (Math.random()*20 - 10), -10, gemRad);
+		greenGem.render.sprite.texture = IMAGES.GREEN_GEM;
+		greenGem.restitution = 0.5;
+		greenGem.objectType = {
 			name: "Gem",
-			color: COLORS.ORANGE
+			color: COLORS.GREEN
 		};
-		
-		var purpleGem = Bodies.circle(canvas.width - canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad, { restitution: 0.3 });
-		purpleGem.render.sprite.texture = IMAGES.PURPLE_GEM;
-		purpleGem.restitution = 0.5;
-		purpleGem.objectType = {
-			name: "Gem",
-			color: COLORS.PURPLE
-		};
-		
-		add([orangeGem, purpleGem]);
+		add(greenGem);
+			
+		// the player-specific gems only spawn on all gem frames
+		if (currentGems < maxGems && allGemFrame) {
+			var orangeGem = Bodies.circle(canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad, { restitution: 0.3 });
+			orangeGem.render.sprite.texture = IMAGES.ORANGE_GEM;
+			orangeGem.restitution = 0.5;
+			orangeGem.objectType = {
+				name: "Gem",
+				color: COLORS.ORANGE
+			};
+			add(orangeGem);
+			
+			if (currentGems < maxGems) {
+				var purpleGem = Bodies.circle(canvas.width - canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad, { restitution: 0.3 });
+				purpleGem.render.sprite.texture = IMAGES.PURPLE_GEM;
+				purpleGem.restitution = 0.5;
+				purpleGem.objectType = {
+					name: "Gem",
+					color: COLORS.PURPLE
+				};
+				
+				add(purpleGem);
+			}
+		}
 	}
 	
 	// next spawn frame does opposite
@@ -715,8 +730,11 @@ function update() {
 	
 	// update special game objects
 	var allObj = engine.world.bodies;
+	currentGems = 0;
+	
 	for (var i = 0; i < allObj.length; i++) {
 		var obj = allObj[i];
+		
 		if (obj.objectType) {
 			// check for objects that are supposed to be dead, and forcibly remove them
 			if (obj.objectType.lifetime < 0) {
@@ -801,86 +819,86 @@ function update() {
 					}
 					break;
 				case "Gem":
+					++currentGems;
+					
 					// check if gem is within goal region
 					if (IS_HOST && (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width)) {
-						if (obj.position.y >= canvas.height - goal.height) {
-							// check if in host goal
-							if (obj.position.x <= goal.width) {
-								// score based on color of gem
-								switch (obj.objectType.color) {
-									case COLORS.ORANGE:
-										socket.emit(
-											"score",
-											{
-												side: player.side,
-												points: 1
-											}
-										);
-										break;
-									case COLORS.GREEN:
-										socket.emit(
-											"score",
-											{
-												side: player.side,
-												points: 2
-											}
-										);
-										break;
-									case COLORS.PURPLE:
-										socket.emit(
-											"score",
-											{
-												side: player.side,
-												points: 3
-											}
-										);
-										break;
-									default:
-										break;
-								}
+						// check if in host goal
+						if (obj.position.x <= goal.width) {
+							// score based on color of gem
+							switch (obj.objectType.color) {
+								case COLORS.ORANGE:
+									socket.emit(
+										"score",
+										{
+											side: player.side,
+											points: 1
+										}
+									);
+									break;
+								case COLORS.GREEN:
+									socket.emit(
+										"score",
+										{
+											side: player.side,
+											points: 2
+										}
+									);
+									break;
+								case COLORS.PURPLE:
+									socket.emit(
+										"score",
+										{
+											side: player.side,
+											points: 3
+										}
+									);
+									break;
+								default:
+									break;
 							}
-							
-							// check if in client goal
-							else if (obj.position.x >= canvas.width - goal.width) {
-								// score based on color of gem
-								switch (obj.objectType.color) {
-									case COLORS.ORANGE:
-										socket.emit(
-											"score",
-											{
-												side: opponent.side,
-												points: 3
-											}
-										);
-										break;
-									case COLORS.GREEN:
-										socket.emit(
-											"score",
-											{
-												side: opponent.side,
-												points: 2
-											}
-										);
-										break;
-									case COLORS.PURPLE:
-										socket.emit(
-											"score",
-											{
-												side: opponent.side,
-												points: 1
-											}
-										);
-										break;
-									default:
-										break;
-								}
-							}
-							
-							socket.emit(
-								"requestRemoveBody",
-								processBody(obj)
-							);
 						}
+						
+						// check if in client goal
+						else if (obj.position.x >= canvas.width - goal.width) {
+							// score based on color of gem
+							switch (obj.objectType.color) {
+								case COLORS.ORANGE:
+									socket.emit(
+										"score",
+										{
+											side: opponent.side,
+											points: 3
+										}
+									);
+									break;
+								case COLORS.GREEN:
+									socket.emit(
+										"score",
+										{
+											side: opponent.side,
+											points: 2
+										}
+									);
+									break;
+								case COLORS.PURPLE:
+									socket.emit(
+										"score",
+										{
+											side: opponent.side,
+											points: 1
+										}
+									);
+									break;
+								default:
+									break;
+							}
+						}
+						
+						socket.emit(
+							"requestRemoveBody",
+							processBody(obj)
+						);
 					}
 					break;
 				default:
