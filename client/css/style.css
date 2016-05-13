@@ -241,6 +241,7 @@ span.statistic {
 /* GAME PAGE */
 canvas {
 	background-size: cover;
+	cursor: none;
 }
 
 #UI {

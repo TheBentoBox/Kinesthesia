@@ -78,10 +78,10 @@ var goalWallWidth = 50;
 // can reference own color with COLORS[player.side]
 var COLORS = {
 	0: "#D6861A",
-	1: "#600960",
+	1: "#9E119E",
 	2: "#09EC09",
 	ORANGE: "#D6861A",
-	PURPLE: "#600960",
+	PURPLE: "#9E119E",
 	GREEN: "#09EC09"
 };
 
@@ -379,7 +379,7 @@ function initializeInput() {
 		// update player click position
 		var rect = canvasUI.getBoundingClientRect();
 		player.pos = {
-			x: Math.floor(e.clientX - rect.left),
+			x: clamp(Math.floor(e.clientX - rect.left), player.side*canvas.width/2, (player.side*canvas.width/2) + canvas.width/2),
 			y: Math.floor(e.clientY - rect.top)
 		};
 		
@@ -392,7 +392,7 @@ function initializeInput() {
 		// update player click position
 		var rect = canvasUI.getBoundingClientRect();
 		player.pos = {
-			x: Math.floor(e.clientX - rect.left),
+			x: clamp(Math.floor(e.clientX - rect.left), player.side*canvas.width/2, (player.side*canvas.width/2) + canvas.width/2),
 			y: Math.floor(e.clientY - rect.top)
 		};
 	});
@@ -405,7 +405,7 @@ function initializeInput() {
 		// update player click position
 		var rect = canvasUI.getBoundingClientRect();
 		player.pos = {
-			x: Math.floor(e.clientX - rect.left),
+			x: clamp(Math.floor(e.clientX - rect.left), player.side*canvas.width/2, (player.side*canvas.width/2) + canvas.width/2),
 			y: Math.floor(e.clientY - rect.top)
 		};
 						
@@ -671,6 +671,7 @@ function dripGems() {
 	// the green neutral gem always spawns
 	var greenGem = Bodies.circle(canvas.width/2 + (Math.random()*20 - 10), -10, gemRad);
 	greenGem.render.sprite.texture = IMAGES.GREEN_GEM;
+	greenGem.restitution = 0.5;
 	greenGem.objectType = {
 		name: "Gem",
 		color: COLORS.GREEN
@@ -679,15 +680,17 @@ function dripGems() {
 		
 	// the player-specific gems only spawn on all gem frames
 	if (allGemFrame) {
-		var orangeGem = Bodies.circle(canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad);
+		var orangeGem = Bodies.circle(canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad, { restitution: 0.3 });
 		orangeGem.render.sprite.texture = IMAGES.ORANGE_GEM;
+		orangeGem.restitution = 0.5;
 		orangeGem.objectType = {
 			name: "Gem",
 			color: COLORS.ORANGE
 		};
 		
-		var purpleGem = Bodies.circle(canvas.width - canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad);
+		var purpleGem = Bodies.circle(canvas.width - canvas.width/3.5 + (Math.random()*100 - 50), -10, gemRad, { restitution: 0.3 });
 		purpleGem.render.sprite.texture = IMAGES.PURPLE_GEM;
+		purpleGem.restitution = 0.5;
 		purpleGem.objectType = {
 			name: "Gem",
 			color: COLORS.PURPLE
