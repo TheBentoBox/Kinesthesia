@@ -414,10 +414,11 @@ function initializeInput() {
 		
 		// prep the new body
 		var newBody = Bodies.circle(player.lastClick.x, player.lastClick.y, player.currentAbility.objRadius);
-		var vel = {
-			x: clamp((player.lastClick.x - player.pos.x) * player.currentAbility.launchScaling, -1 * newBody.objectType.name, newBody.objectType.maxVel),
-			y: clamp((player.lastClick.y - player.pos.y) * player.currentAbility.launchScaling, -1 * newBody.objectType.name, newBody.objectType.maxVel)
-		};
+		
+		var velDir = Vector.sub(player.lastClick, player.pos);
+		var velMag = Math.min(Vector.magnitude(velDir) * player.currentAbility.launchScaling, player.currentAbility.maxVel);
+		velDir = Vector.normalise(velDir);
+		var vel = Vector.mult(velDir, velMag);
 		
 		// make sure it has a unique ID
 		var bodyIDFound = false;
