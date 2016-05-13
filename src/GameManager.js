@@ -28,6 +28,7 @@ class GameManager {
 		this.p2.score = 0;
 		this.p1.room = this.room;
 		this.p2.room = this.room;
+		this.gameComplete = false;
 		
 		// Pass new players to event handlers
 		this.onUpdate(this.p1);
@@ -41,10 +42,11 @@ class GameManager {
 		this.onObjectRemove(this.p1);
 		this.onObjectRemove(this.p2);
 		
-		this.onHostEmit(this.p1);
 		
+		// Setup for host callbacs to server
+		this.onHostEmit(this.p1);
+		this.onGameComplete(this.p1);
 		this.onScore(this.p1);
-		this.onScore(this.p2);
 		
 		//this.onDisconnect(this.p1);
 		//this.onDisconnect(this.p2);
@@ -125,6 +127,43 @@ class GameManager {
 	onScore(socket) {
 		socket.on("score", function(data) {
 			this.io.sockets.in(this.room).emit("score", data);
+		}.bind(this));
+	}
+	
+	/* onGameComplete
+		desc: called when the game is completed, finds user statistics objects on the sever and
+				updates them with results from the game
+	*/
+	onGameComplete(socket) {
+		socket.on ("gameComplete", function(data) {
+			// make sure this manager can't send more than 1 score
+			if (this.gameComplete) return;
+			
+			// Check who the winner was
+			var winner, loser;
+			
+			// player 1 is the winner
+			if (data.hostScore > data.clientScore) {
+				winner = this.p1;
+				loser = this.p2;
+			}
+			// player 2 is the winner
+			else if (data.clientScore > data.hostScore) {
+				winner = this.p2;
+				loser = this.p1;
+			}
+			// must've been a tie!
+			else {
+				this.p1.emit("gameComplete", { status: "tied" });
+				this.p2.emit("gameComplete", { status: "tied" });
+				this.gameComplete = true;
+				return;
+			}
+			
+			// notify winner and loser
+			winner.emit("gameComplete", { status: "won" });
+			loser.emit("gameComplete", { status: "lost" });
+			this.gameComplete = true;
 		}.bind(this));
 	}
 }

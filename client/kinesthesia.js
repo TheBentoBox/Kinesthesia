@@ -60,11 +60,18 @@ var IMAGES = {
 	PURPLE_GEM: "assets/images/gemPurple.png"
 };
 
-var gemRad = 11; // size of gem bodies (radius)
-var gameInitialized = false; // whether main object loop has started, only relevant for host
 var IS_HOST = false; // whether this user is the host
-var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
+
+// Game control variables
+var gameComplete = false; // whether or not the game has finished yet
+var gameInitialized = false; // whether main object loop has started, only relevant for host
 var gameTime = 3600; // time left in this game
+
+// Gem related variables
+var dripGemsTimeoutID = -1; // ID of dripGems timeout, used by host, cancelled when game ends
+var emitBodiesTimeoutID = -1; // ID of emitBodies timeout, used by host, cancelled when game ends
+var gemRad = 11; // size of gem bodies (radius)
+var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
 var maxGems = 20; // maximum number of gems allowed onscreen
 var currentGems = 0; // current number of gems onscren
 
@@ -151,8 +158,8 @@ function setupSocket() {
 		// if game init was called before we knew we were the host, do host stuff now
 		if (gameInitialized) {
 			setupWorld();
-			setInterval(emitBodies, 1000/10);
-			setInterval(dripGems, 5000);
+			emitBodiesTimeoutID = setInterval(emitBodies, 1000/10);
+			dripGemsTimeoutID = setInterval(dripGems, 5000);
 			// spawn a little starting wave of gems
 			for (var i = 0; i < 5; ++i)
 				setTimeout(dripGems, 200*i);
@@ -278,27 +285,23 @@ function setupSocket() {
 		}	
 	});
 	
-	// Callback for game end
-	socket.on("end", function(data) {
-		// player win
-		if (data.side === player.side) {
-			msgBox.innerHTML = player.name + " wins!";
-		}
-		// opponent win
-		else if (data.side === opponent.side){
-			msgBox.innerHTML = opponent.name + " wins!";
-		}
-		// tie
-		else {
-			msgBox.innerHTML = "Tie game!";
-		}
-	});
-	
 	// Listen for game completion events, which let us know the game
 	// is over and whether we won or lost. Updates statistics.
 	socket.on("gameComplete", function(data) {
+		
+		// send the game completion info to the server for stats updates
 		data._csrf = $("#token").val();
 		sendAjax("/updateStats", data);
+		
+		// update the main message box to say how they did
+		windowManager.modifyText("gameHUD", "message", "text", { string: "You " + data.status + "!", css: "12pt 'Roboto'", color: "white"});
+		
+		// stop running the game if we're the host
+		if (IS_HOST) {
+			clearTimeout(emitBodiesTimeoutID);
+			clearTimeout(dripGemsTimeoutID);
+		}
+		
 	});
 }
 
@@ -314,8 +317,9 @@ function initializeGame() {
 	// The host starts up the world and begins an object emission loop
 	if (IS_HOST && !gameInitialized) {
 		setupWorld();
-		setInterval(emitBodies, 1000/10);
-		setInterval(dripGems, 5000);
+		emitBodiesTimeoutID = setInterval(emitBodies, 1000/10);
+		dripGemsTimeoutID = setInterval(dripGems, 5000);
+		
 		// spawn a little starting wave of gems
 		for (var i = 0; i < 5; ++i)
 			setTimeout(dripGems, 200*i);
@@ -617,18 +621,21 @@ function processBody(physBody) {
 
 // Adds an object to the world, immediately emitting it to the other user
 function add(obj) {
-	// allows us to pass in an array of objects to emit
-	var emitObj = obj;
-	if (!Array.isArray(obj)) {
-		emitObj = [obj];
-	}
-	
-	// emit each thing in the array individually
-	for (var i = 0; i < emitObj.length; ++i) {
-		socket.emit(
-			"requestAddBody",
-			processBody(emitObj[i])
-		);
+	// in general, don't let them send objects once the game ends
+	if (!gameComplete) {
+		// allows us to pass in an array of objects to emit
+		var emitObj = obj;
+		if (!Array.isArray(obj)) {
+			emitObj = [obj];
+		}
+		
+		// emit each thing in the array individually
+		for (var i = 0; i < emitObj.length; ++i) {
+			socket.emit(
+				"requestAddBody",
+				processBody(emitObj[i])
+			);
+		}
 	}
 }
 
@@ -668,7 +675,6 @@ function emitBodies() {
 			}
 		}
 	}
-	
 	
 	// update global iteration value which is used to control resting bodies
 	globalIteration = (globalIteration + 1) % 10;
@@ -728,188 +734,255 @@ function update() {
 	draw();
 	game.windowManager.updateAndDraw([{name: "time", value: [(Math.ceil(gameTime/60)).toString()]}]);
 	
-	// update special game objects
-	var allObj = engine.world.bodies;
-	currentGems = 0;
-	
-	for (var i = 0; i < allObj.length; i++) {
-		var obj = allObj[i];
+	// only perform object updates and timing while the game is running
+	if (!gameComplete) {
+		// update special game objects
+		var allObj = engine.world.bodies;
+		currentGems = 0;
 		
-		if (obj.objectType) {
-			// check for objects that are supposed to be dead, and forcibly remove them
-			if (obj.objectType.lifetime < 0) {
-				Matter.Composite.remove(engine.world, obj);
-				continue;
-			}
+		for (var i = 0; i < allObj.length; i++) {
+			var obj = allObj[i];
 			
-			switch (obj.objectType.name) {
-				case "Cannonball":
-					// decrement lifetime
-					obj.objectType.lifetime--;
-					
-					// remove if lifetime over
-					if (obj.objectType.lifetime <= 0 && IS_HOST) {
-						socket.emit(
-							"requestRemoveBody",
-							processBody(obj)
-						);
-					}
-					break;
-				case "Grenade":
-					// decrement lifetime
-					obj.objectType.lifetime--;
-					
-					// explode if lifetime over
-					if (obj.objectType.lifetime <= 0 && IS_HOST) {
-						// make grenade blow away objects
+			if (obj.objectType) {
+				// check for objects that are supposed to be dead, and forcibly remove them
+				if (obj.objectType.lifetime < 0) {
+					Matter.Composite.remove(engine.world, obj);
+					continue;
+				}
+				
+				switch (obj.objectType.name) {
+					case "Cannonball":
+						// decrement lifetime
+						obj.objectType.lifetime--;
+						
+						// remove if lifetime over
+						if (obj.objectType.lifetime <= 0 && IS_HOST) {
+							socket.emit(
+								"requestRemoveBody",
+								processBody(obj)
+							);
+						}
+						break;
+					case "Grenade":
+						// decrement lifetime
+						obj.objectType.lifetime--;
+						
+						// explode if lifetime over
+						if (obj.objectType.lifetime <= 0 && IS_HOST) {
+							// make grenade blow away objects
+							for (var j = 0; j < allObj.length; j++) {
+								if (i != j) {
+									// grab other object in world
+									var other = allObj[j];
+									
+									// calculate explosive force
+									var exploDir = Vector.sub(other.position, obj.position);
+									var exploIntensity = obj.objectType.maxForce / Math.max(Vector.magnitude(exploDir), 20);
+									exploDir = Vector.normalise(exploDir);
+									var exploForce = Vector.mult(exploDir, exploIntensity);
+									
+									// apply force
+									Body.applyForce(other, other.position, exploForce);
+								}
+							}
+							
+							// remove grenade
+							socket.emit(
+								"requestRemoveBody",
+								processBody(obj)
+							);
+						}
+						break;
+					case "Gravity Well":
+						// decrement lifetime
+						obj.objectType.lifetime--;
+						
+						// make well float and spin constantly
+						Body.applyForce(obj, obj.position, {x: 0, y: -engine.world.gravity.y * engine.world.gravity.scale / 1.45});
+						Body.setAngularVelocity(obj, .1);
+						
+						// make well suck in objects
 						for (var j = 0; j < allObj.length; j++) {
 							if (i != j) {
 								// grab other object in world
 								var other = allObj[j];
 								
-								// calculate explosive force
-								var exploDir = Vector.sub(other.position, obj.position);
-								var exploIntensity = obj.objectType.maxForce / Math.max(Vector.magnitude(exploDir), 20);
-								exploDir = Vector.normalise(exploDir);
-								var exploForce = Vector.mult(exploDir, exploIntensity);
+								// calculate point gravity
+								var gravDir = Vector.sub(obj.position, other.position);
+								var gravIntensity = obj.objectType.maxForce / Math.max(Vector.magnitude(gravDir), 5);
+								gravDir = Vector.normalise(gravDir);
+								var gravForce = Vector.mult(gravDir, gravIntensity);
 								
-								// apply force
-								Body.applyForce(other, other.position, exploForce);
+								// apply gravity
+								Body.applyForce(other, other.position, gravForce);
 							}
 						}
 						
-						// remove grenade
-						socket.emit(
-							"requestRemoveBody",
-							processBody(obj)
-						);
-					}
-					break;
-				case "Gravity Well":
-					// decrement lifetime
-					obj.objectType.lifetime--;
-					
-					// make well float and spin constantly
-					Body.applyForce(obj, obj.position, {x: 0, y: -engine.world.gravity.y * engine.world.gravity.scale / 1.45});
-					Body.setAngularVelocity(obj, .1);
-					
-					// make well suck in objects
-					for (var j = 0; j < allObj.length; j++) {
-						if (i != j) {
-							// grab other object in world
-							var other = allObj[j];
+						// remove if lifetime over
+						if (obj.objectType.lifetime <= 0 && IS_HOST) {
+							socket.emit(
+								"requestRemoveBody",
+								processBody(obj)
+							);
+						}
+						break;
+					case "Gem":
+						++currentGems;
+						
+						// check if gem is within goal region
+						if (IS_HOST && (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width)) {
+							// check if in host goal
+							if (obj.position.x <= goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 1
+											}
+										);
+										break;
+									case COLORS.GREEN:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 2
+											}
+										);
+										break;
+									case COLORS.PURPLE:
+										socket.emit(
+											"score",
+											{
+												side: player.side,
+												points: 3
+											}
+										);
+										break;
+									default:
+										break;
+								}
+							}
 							
-							// calculate point gravity
-							var gravDir = Vector.sub(obj.position, other.position);
-							var gravIntensity = obj.objectType.maxForce / Math.max(Vector.magnitude(gravDir), 5);
-							gravDir = Vector.normalise(gravDir);
-							var gravForce = Vector.mult(gravDir, gravIntensity);
+							// check if in client goal
+							else if (obj.position.x >= canvas.width - goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 3
+											}
+										);
+										break;
+									case COLORS.GREEN:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 2
+											}
+										);
+										break;
+									case COLORS.PURPLE:
+										socket.emit(
+											"score",
+											{
+												side: opponent.side,
+												points: 1
+											}
+										);
+										break;
+									default:
+										break;
+								}
+							}
 							
-							// apply gravity
-							Body.applyForce(other, other.position, gravForce);
+							socket.emit(
+								"requestRemoveBody",
+								processBody(obj)
+							);
+						}
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		
+		// increment game time
+		if (gameTime > 0) {
+			--gameTime;
+			
+			// game has ended!
+			if (gameTime === 0) {
+				gameComplete = true;
+				
+				// if we're the host, notify the server of the end
+				if (IS_HOST) {
+					
+					// forcibly count all gems that are in the goal
+					for (var i = 0; i < allObj.length; i++) {
+						var obj = allObj[i];
+						
+						if (obj.objectType) 
+						if (obj.objectType.name === "Gem") {
+							
+							// check if in host goal
+							if (obj.position.x <= goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										player.score += 1;
+										break;
+									case COLORS.GREEN:
+										player.score += 2;
+										break;
+									case COLORS.PURPLE:
+										player.score += 3;
+										break;
+								}
+								
+								socket.emit(
+									"requestRemoveBody",
+									processBody(obj)
+								);
+							}
+							
+							// check if in client goal
+							else if (obj.position.x >= canvas.width - goal.width) {
+								// score based on color of gem
+								switch (obj.objectType.color) {
+									case COLORS.ORANGE:
+										opponent.score += 3;
+										break;
+									case COLORS.GREEN:
+										player.score += 2;
+										break;
+									case COLORS.PURPLE:
+										player.score += 1;
+										break;
+								}
+								
+								socket.emit(
+									"requestRemoveBody",
+									processBody(obj)
+								);
+							}
 						}
 					}
 					
-					// remove if lifetime over
-					if (obj.objectType.lifetime <= 0 && IS_HOST) {
-						socket.emit(
-							"requestRemoveBody",
-							processBody(obj)
-						);
-					}
-					break;
-				case "Gem":
-					++currentGems;
-					
-					// check if gem is within goal region
-					if (IS_HOST && (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width)) {
-						// check if in host goal
-						if (obj.position.x <= goal.width) {
-							// score based on color of gem
-							switch (obj.objectType.color) {
-								case COLORS.ORANGE:
-									socket.emit(
-										"score",
-										{
-											side: player.side,
-											points: 1
-										}
-									);
-									break;
-								case COLORS.GREEN:
-									socket.emit(
-										"score",
-										{
-											side: player.side,
-											points: 2
-										}
-									);
-									break;
-								case COLORS.PURPLE:
-									socket.emit(
-										"score",
-										{
-											side: player.side,
-											points: 3
-										}
-									);
-									break;
-								default:
-									break;
-							}
-						}
-						
-						// check if in client goal
-						else if (obj.position.x >= canvas.width - goal.width) {
-							// score based on color of gem
-							switch (obj.objectType.color) {
-								case COLORS.ORANGE:
-									socket.emit(
-										"score",
-										{
-											side: opponent.side,
-											points: 3
-										}
-									);
-									break;
-								case COLORS.GREEN:
-									socket.emit(
-										"score",
-										{
-											side: opponent.side,
-											points: 2
-										}
-									);
-									break;
-								case COLORS.PURPLE:
-									socket.emit(
-										"score",
-										{
-											side: opponent.side,
-											points: 1
-										}
-									);
-									break;
-								default:
-									break;
-							}
-						}
-						
-						socket.emit(
-							"requestRemoveBody",
-							processBody(obj)
-						);
-					}
-					break;
-				default:
-					break;
+					// send scores so server can distribute status update events
+					socket.emit("gameComplete", { hostScore: player.score, clientScore: opponent.score });
+				}
 			}
 		}
 	}
-	
-	// increment game time
-	gameTime--;
-	gameTime = Math.max(gameTime, 0);
 	
 	// request next frame
 	requestAnimationFrame(update);

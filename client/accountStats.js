@@ -1,13 +1,17 @@
 function fillStats() {
 	// grab element references
 	var pctWinSpan = document.querySelector('#pctWin');
+	var pctTiedSpan = document.querySelector('#pctTied');
 	var pctLossSpan = document.querySelector('#pctLoss');
 	var winLossRatioSpan = document.querySelector('#winLossRatio');
 	
 	// only attempt calculation if they've played yet
 	if (userdata.gamesPlayed > 0) {
 		var pctWins = ((userdata.gamesWon / userdata.gamesPlayed) * 100) + "%";
+		var pctTied = ((userdata.gamesTied / userdata.gamesPlayed) * 100) + "%";
 		var pctLost = ((userdata.gamesLost / userdata.gamesPlayed) * 100) + "%";
+		
+		console.log(userdata);
 		
 		// catch if they've won all of their games
 		if (userdata.gamesLost === 0) {
@@ -19,12 +23,14 @@ function fillStats() {
 	}
 	else {
 		pctWins = "No games played";
+		pctTied = "No games played"
 		pctLost = "No games played";
 		winLossRatio = "No games played";
 	}
 	
 	// fill them in
 	pctWinSpan.innerHTML = pctWins;
+	pctTiedSpan.innerHTML = pctTied;
 	pctLossSpan.innerHTML = pctLost;
 	winLossRatioSpan.innerHTML = winLossRatio;
 	

@@ -30,6 +30,12 @@ var StatisticsSchema = new mongoose.Schema ({
 		default: 0
 	},
 	
+	gamesTied: {
+		type: Number,
+		min: 0,
+		default: 0
+	},
+	
 	gamesLost: {
 		type: Number,
 		min: 0,
@@ -43,6 +49,7 @@ StatisticsSchema.methods.toAPI = function() {
 		createdData: this.createdData,
 		gamesPlayed: this.gamesPlayed,
 		gamesWon: this.gamesWon,
+		gamesTied: this.gamesTied,
 		gamesLost: this.gamesLost
 	};
 };
@@ -54,7 +61,7 @@ StatisticsSchema.statics.findByOwner = function(ownerId, callback) {
 		owner: mongoose.Types.ObjectId(ownerId)
 	};
 	
-	return StatisticsModel.findOne(search).select("createdData gamesPlayed gamesWon gamesLost").exec(callback);
+	return StatisticsModel.findOne(search).select("createdData gamesPlayed gamesWon gamesTied gamesLost").exec(callback);
 };
 
 // Finds an exact matching statistics object
@@ -66,11 +73,12 @@ StatisticsSchema.statics.findStatistics = function(ownerId, matchingStatistics, 
 		createdData: matchingStatistics.createdData,
 		gamesPlayed: matchingStatistics.gamesPlayed,
 		gamesWon: matchingStatistics.gamesWon,
+		gamesTied: matchingStatistics.gamesTied,
 		gamesLost: matchingStatistics.gamesLost
 	};
 	
 	// return the exact statistics object, if one is found
-	return StatisticsModel.findOne(search).select("createdData gamesPlayed gamesWon gamesLost").exec(callback);
+	return StatisticsModel.findOne(search).select("createdData gamesPlayed gamesWon gamesTied gamesLost").exec(callback);
 };
 
 // Apply the schema to the model

@@ -23,8 +23,11 @@ var updateStats = function(req, res) {
 		++docs.gamesPlayed;
 		
 		// add to appropriate stat for wins or losses
-		if (req.body.status === "won") {
+		if (req.body.status == "won") {
 			++docs.gamesWon;
+		}
+		else if (req.body.status == "tied") {
+			++docs.gamesTied;
 		}
 		else {
 			++docs.gamesLost;
