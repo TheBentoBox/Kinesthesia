@@ -62,7 +62,6 @@ class GameManager {
 		this.p1.emit("notifyHost");
 		
 		// update player 1
-		this.p1.emit("serverInfo", {msg: "Game started. You are playing against " + this.p2.name + "."});
 		this.p1.emit("updateSelf", { side: 0 });
 		this.p1.emit(
 			"updateOther",
@@ -73,7 +72,6 @@ class GameManager {
 		);
 		
 		// update player 2
-		this.p2.emit("serverInfo", {msg: "Game started. You are playing against " + this.p1.name + "."});
 		this.p2.emit("updateSelf", { side: 1 });
 		this.p2.emit(
 			"updateOther",

@@ -11,8 +11,13 @@ function connectChat() {
 	
 	// update chat window on connect
 	socket.on('connect', function(data) {
-		
-		chatWindow.innerHTML = "<p><strong>Server</strong>: Connected to chat!</p>"
+		var p = document.createElement("p");
+		var pMsg = document.createElement("span");
+		p.innerHTML = "<strong>SERVER</strong>: ";
+		p.className += "serverMsg";
+		pMsg.textContent = "Connected to chat!";
+		p.appendChild(pMsg);
+		chatWindow.appendChild(p);
 	});
 	
 	// listener for msg event
@@ -22,6 +27,17 @@ function connectChat() {
 		var pMsg = document.createElement("span");
 		p.innerHTML = "<strong>" + data.name + "</strong>: ";
 		p.className += "otherUserMsg";
+		pMsg.textContent = data.msg;
+		p.appendChild(pMsg);
+		chatWindow.appendChild(p);
+	});
+	
+	// listener for msg event
+	socket.on('serverMsg', function(data) {
+		var p = document.createElement("p");
+		var pMsg = document.createElement("span");
+		p.innerHTML = "<strong>SERVER</strong>: ";
+		p.className += "serverMsg";
 		pMsg.textContent = data.msg;
 		p.appendChild(pMsg);
 		chatWindow.appendChild(p);

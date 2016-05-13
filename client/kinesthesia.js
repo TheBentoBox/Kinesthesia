@@ -13,7 +13,7 @@ var socket;
 var canvas, canvasUI;
 var ctx, ctxUI;
 var canvasPos;
-var serverInfo
+var serverMsg
 var windowManager = game.windowManager; // reference to the engine's window manager
 
 // game/server feedback box
@@ -132,7 +132,6 @@ function setupSocket() {
 	// The io variable is a global var from the socket.io script above
 	socket = (socket || io.connect());
 	socket.emit("userdata", userdata);
-	serverInfo = document.querySelector('#serverInfo');
 	
 	// Callback for start of play
 	socket.on("play", initializeGame);
@@ -168,16 +167,6 @@ function setupSocket() {
 		// hide connection form
 		document.querySelector("#connectForm").style.visibility = "hidden";
 	}); 
-	
-	// When the server sends us info - updates the ticker at the top of the game
-	socket.on("serverInfo", function(data) {
-		// temporarily (2 seconds) displays server notifications
-		if (serverInfo) {
-			serverInfo.style.opacity = 1;
-			serverInfo.innerHTML = data.msg;
-			setTimeout(function() { serverInfo.style.opacity = 0; }, 2000);
-		}
-	});
 	
 	// Removes all bodies from the game world
 	socket.on("clearBodies", function(data) {
@@ -326,6 +315,9 @@ function initializeGame() {
 	
 	// Begin update tick
 	setTimeout(update, 100);
+	
+	// Notify user of game start
+	windowManager.modifyText("gameHUD", "message", "text", {string: "Game started. You are playing against " + opponent.name + ".", css: "12pt 'Roboto'", color: "white"});
 }
 
 // FUNCTION: Loads in some images
@@ -548,11 +540,11 @@ function setupUI() {
 	//} end OPPONENT INFO HUD
 
 	//{ GAME INFO HUD //
-		windowManager.makeUI("gameHUD", canvas.width/2 - 150, 0, 300, 75);
+		windowManager.makeUI("gameHUD", canvas.width/2 - 250, 0, 500, 75);
 		windowManager.modifyUI("gameHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
 		windowManager.modifyUI("gameHUD", "border", {color: COLORS.GREEN, width: "1px"});
-		windowManager.makeText("gameHUD", "message", 35 , 15, 230, 30, "", "12pt 'Roboto'", "white");
-		windowManager.makeText("gameHUD", "time", 135, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "message", 35 , 15, 430, 30, "", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "time", 225, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
 		windowManager.toggleUI("gameHUD");
 	//} end GAME INFO HUD
 }

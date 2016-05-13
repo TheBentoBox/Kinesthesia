@@ -127,6 +127,12 @@ h1 {
 	font-family: courier;
 }
 
+#chatWindow .serverMsg {
+	background-color: #355235;
+	color: #FFF3E2;
+	font-family: courier;
+}
+
 #chatWindow span {
 	font-family: courier;
 }
@@ -252,13 +258,6 @@ canvas {
 #canvasContainer {
 	width: 100%;
 	text-align: center;
-}
-
-#serverInfo {
-	position: relative;
-	top: 25px;
-	text-align: center;
-	color: #D6F2D6;
 }
 
 
