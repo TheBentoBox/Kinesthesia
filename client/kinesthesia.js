@@ -514,6 +514,8 @@ function initializeInput() {
 function setupUI() {
 	//{ PLAYER INFO HUD //
 	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 150), 0, 150, 50);
+	windowManager.modifyUI("playerHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
+	windowManager.modifyUI("playerHUD", "border", {color: COLORS[player.side], width: "1px"});
 	windowManager.makeText("playerHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
 	windowManager.makeText("playerHUD", "score", 15, 15, 50, 50, player.score.toString(), "12pt 'Roboto'", "white");
 	windowManager.makeImage("playerHUD", "currAbilityImg", 85, 0, 50, 50, player.currentAbility.img);
@@ -522,6 +524,8 @@ function setupUI() {
 	
 	//{ OPPONENT INFO HUD //
 	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 150), 0, 150, 50);
+	windowManager.modifyUI("opponentHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
+	windowManager.modifyUI("opponentHUD", "border", {color: COLORS[opponent.side], width: "1px"});
 	windowManager.makeText("opponentHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Roboto'", "white");
 	windowManager.makeText("opponentHUD", "score", 15, 15, 50, 50, opponent.score.toString(), "12pt 'Roboto'", "white");
 	windowManager.makeImage("opponentHUD", "currAbilityImg", 85, 0, 50, 50, opponent.currentAbility.img);
