@@ -27,7 +27,9 @@ var ABILITIES = {
 		src: "assets/images/iconCannonball.png",
 		objRadius: 18,
 		lifetime: 1200,
-		launchScaling: 0.5
+		launchScaling: 0.25,
+		maxVel: 30,
+		restitution: 0.8
 	},
 	GRENADE: {
 		name: "Grenade",
@@ -35,6 +37,8 @@ var ABILITIES = {
 		objRadius: 18,
 		lifetime: 120,
 		launchScaling: 0.125,
+		maxVel: 15,
+		restitution: 0.2,
 		maxForce: 1.5
 	},
 	GRAVITY_WELL: {
@@ -43,6 +47,8 @@ var ABILITIES = {
 		objRadius: 15,
 		lifetime: 300,
 		launchScaling: 0.015,
+		maxVel: 10,
+		restitution: 1,
 		maxForce: 0.1
 	}
 };
@@ -409,10 +415,10 @@ function initializeInput() {
 		// prep the new body
 		var newBody = Bodies.circle(player.lastClick.x, player.lastClick.y, player.currentAbility.objRadius);
 		var vel = {
-				x: clamp((player.lastClick.x - player.pos.x) * player.currentAbility.launchScaling, -15, 15),
-				y: clamp((player.lastClick.y - player.pos.y) * player.currentAbility.launchScaling, -15, 15)
-			};
-			
+			x: clamp((player.lastClick.x - player.pos.x) * player.currentAbility.launchScaling, -1 * newBody.objectType.name, newBody.objectType.maxVel),
+			y: clamp((player.lastClick.y - player.pos.y) * player.currentAbility.launchScaling, -1 * newBody.objectType.name, newBody.objectType.maxVel)
+		};
+		
 		// make sure it has a unique ID
 		var bodyIDFound = false;
 		var highestFoundID = -1;
@@ -439,18 +445,16 @@ function initializeInput() {
 		Body.setVelocity(newBody, vel);
 		newBody.objectType = player.currentAbility;
 		newBody.render.sprite.texture = player.currentAbility.src;
+		newBody.restitution = newBody.objectType.restitution;
 		
 		// set special object properties
 		switch (newBody.objectType.name) {
 			case "Cannonball":
-				newBody.restitution = 0.9;
 				break;
 			case "Grenade":
-				newBody.restitution = 0.2;
 				break;
 			case "Gravity Well":
 				Body.setAngularVelocity(newBody, .1);
-				newBody.restitution = 1;
 				newBody.collisionFilter.category = 0x0002;
 				newBody.collisionFilter.mask = newBody.collisionFilter.category;
 				break;
@@ -537,7 +541,7 @@ function setupUI() {
 		windowManager.makeUI("gameHUD", canvas.width/2 - 150, 0, 300, 75);
 		windowManager.modifyUI("gameHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
 		windowManager.modifyUI("gameHUD", "border", {color: COLORS.GREEN, width: "1px"});
-		windowManager.makeText("gameHUD", "message", 15 , 15, 230, 30, "", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "message", 35 , 15, 230, 30, "", "12pt 'Roboto'", "white");
 		windowManager.makeText("gameHUD", "time", 135, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
 		windowManager.toggleUI("gameHUD");
 	//} end GAME INFO HUD
@@ -883,6 +887,7 @@ function update() {
 	
 	// increment game time
 	gameTime--;
+	gameTime = Math.max(gameTime, 0);
 	
 	// request next frame
 	requestAnimationFrame(update);
