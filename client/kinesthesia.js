@@ -13,11 +13,8 @@ var socket;
 var canvas, canvasUI;
 var ctx, ctxUI;
 var canvasPos;
-var serverInfo
+var serverMsg
 var windowManager = game.windowManager; // reference to the engine's window manager
-
-// game/server feedback box
-var msgBox;
 
 //{ GAME VARS
 // abilities the player can switch between
@@ -65,7 +62,7 @@ var IS_HOST = false; // whether this user is the host
 // Game control variables
 var gameComplete = false; // whether or not the game has finished yet
 var gameInitialized = false; // whether main object loop has started, only relevant for host
-var gameTime = 3600; // time left in this game
+var gameTime = 600; // time left in this game
 
 // Gem related variables
 var dripGemsTimeoutID = -1; // ID of dripGems timeout, used by host, cancelled when game ends
@@ -74,6 +71,7 @@ var gemRad = 11; // size of gem bodies (radius)
 var allGemFrame = true; // whether all 3 types of gems will be emitted this frame, or just a neutral one
 var maxGems = 20; // maximum number of gems allowed onscreen
 var currentGems = 0; // current number of gems onscren
+var gemScoreTime = 300; // time gems need to stay in goal to score
 
 // dimensions of the goal area and other world statics
 var goal = {
@@ -138,7 +136,6 @@ function setupSocket() {
 	// The io variable is a global var from the socket.io script above
 	socket = (socket || io.connect());
 	socket.emit("userdata", userdata);
-	serverInfo = document.querySelector('#serverInfo');
 	
 	// Callback for start of play
 	socket.on("play", initializeGame);
@@ -163,25 +160,6 @@ function setupSocket() {
 			// spawn a little starting wave of gems
 			for (var i = 0; i < 5; ++i)
 				setTimeout(dripGems, 200*i);
-		}
-	});
-	
-	// Callback for successful join
-	socket.on("joined", function(data) {
-		// join feedback
-		msgBox.innerHTML = data.msg;
-		
-		// hide connection form
-		document.querySelector("#connectForm").style.visibility = "hidden";
-	}); 
-	
-	// When the server sends us info - updates the ticker at the top of the game
-	socket.on("serverInfo", function(data) {
-		// temporarily (2 seconds) displays server notifications
-		if (serverInfo) {
-			serverInfo.style.opacity = 1;
-			serverInfo.innerHTML = data.msg;
-			setTimeout(function() { serverInfo.style.opacity = 0; }, 2000);
 		}
 	});
 	
@@ -329,6 +307,9 @@ function initializeGame() {
 	
 	// Begin update tick
 	setTimeout(update, 100);
+	
+	// Notify user of game start
+	windowManager.modifyText("gameHUD", "message", "text", {string: "Game started. You are playing against " + opponent.name + ".", css: "12pt 'Roboto'", color: "white"});
 }
 
 // FUNCTION: Loads in some images
@@ -551,11 +532,11 @@ function setupUI() {
 	//} end OPPONENT INFO HUD
 
 	//{ GAME INFO HUD //
-		windowManager.makeUI("gameHUD", canvas.width/2 - 150, 0, 300, 75);
+		windowManager.makeUI("gameHUD", canvas.width/2 - 250, 0, 500, 75);
 		windowManager.modifyUI("gameHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
 		windowManager.modifyUI("gameHUD", "border", {color: COLORS.GREEN, width: "1px"});
-		windowManager.makeText("gameHUD", "message", 35 , 15, 230, 30, "", "12pt 'Roboto'", "white");
-		windowManager.makeText("gameHUD", "time", 135, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "message", 35 , 15, 430, 30, "", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "time", 225, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
 		windowManager.toggleUI("gameHUD");
 	//} end GAME INFO HUD
 }
@@ -691,7 +672,9 @@ function dripGems() {
 		greenGem.restitution = 0.5;
 		greenGem.objectType = {
 			name: "Gem",
-			color: COLORS.GREEN
+			color: COLORS.GREEN,
+			lifetime: gemScoreTime,
+			inGoal: false
 		};
 		add(greenGem);
 			
@@ -702,7 +685,9 @@ function dripGems() {
 			orangeGem.restitution = 0.5;
 			orangeGem.objectType = {
 				name: "Gem",
-				color: COLORS.ORANGE
+				color: COLORS.ORANGE,
+				lifetime: gemScoreTime,
+				inGoal: false
 			};
 			add(orangeGem);
 			
@@ -712,7 +697,9 @@ function dripGems() {
 				purpleGem.restitution = 0.5;
 				purpleGem.objectType = {
 					name: "Gem",
-					color: COLORS.PURPLE
+					color: COLORS.PURPLE,
+					lifetime: gemScoreTime,
+					inGoal: false
 				};
 				
 				add(purpleGem);
@@ -831,82 +818,98 @@ function update() {
 						
 						// check if gem is within goal region
 						if (IS_HOST && (obj.position.x <= goal.width || obj.position.x >= canvas.width - goal.width)) {
-							// check if in host goal
-							if (obj.position.x <= goal.width) {
-								// score based on color of gem
-								switch (obj.objectType.color) {
-									case COLORS.ORANGE:
-										socket.emit(
-											"score",
-											{
-												side: player.side,
-												points: 1
-											}
-										);
-										break;
-									case COLORS.GREEN:
-										socket.emit(
-											"score",
-											{
-												side: player.side,
-												points: 2
-											}
-										);
-										break;
-									case COLORS.PURPLE:
-										socket.emit(
-											"score",
-											{
-												side: player.side,
-												points: 3
-											}
-										);
-										break;
-									default:
-										break;
-								}
-							}
 							
-							// check if in client goal
-							else if (obj.position.x >= canvas.width - goal.width) {
-								// score based on color of gem
-								switch (obj.objectType.color) {
-									case COLORS.ORANGE:
-										socket.emit(
-											"score",
-											{
-												side: opponent.side,
-												points: 3
-											}
-										);
-										break;
-									case COLORS.GREEN:
-										socket.emit(
-											"score",
-											{
-												side: opponent.side,
-												points: 2
-											}
-										);
-										break;
-									case COLORS.PURPLE:
-										socket.emit(
-											"score",
-											{
-												side: opponent.side,
-												points: 1
-											}
-										);
-										break;
-									default:
-										break;
-								}
-							}
+							// set that it is in goal
+							obj.objectType.inGoal = true;
 							
-							socket.emit(
-								"requestRemoveBody",
-								processBody(obj)
-							);
+							// check if gem has finished score time
+							if (obj.objectType.lifetime <= 0) {
+								// check if in host goal
+								if (obj.position.x <= goal.width) {
+									// score based on color of gem
+									switch (obj.objectType.color) {
+										case COLORS.ORANGE:
+											socket.emit(
+												"score",
+												{
+													side: player.side,
+													points: 1
+												}
+											);
+											break;
+										case COLORS.GREEN:
+											socket.emit(
+												"score",
+												{
+													side: player.side,
+													points: 2
+												}
+											);
+											break;
+										case COLORS.PURPLE:
+											socket.emit(
+												"score",
+												{
+													side: player.side,
+													points: 3
+												}
+											);
+											break;
+										default:
+											break;
+									}
+								}
+								
+								// check if in client goal
+								else if (obj.position.x >= canvas.width - goal.width) {
+									// score based on color of gem
+									switch (obj.objectType.color) {
+										case COLORS.ORANGE:
+											socket.emit(
+												"score",
+												{
+													side: opponent.side,
+													points: 3
+												}
+											);
+											break;
+										case COLORS.GREEN:
+											socket.emit(
+												"score",
+												{
+													side: opponent.side,
+													points: 2
+												}
+											);
+											break;
+										case COLORS.PURPLE:
+											socket.emit(
+												"score",
+												{
+													side: opponent.side,
+													points: 1
+												}
+											);
+											break;
+										default:
+											break;
+									}
+								}
+							
+								socket.emit(
+									"requestRemoveBody",
+									processBody(obj)
+								);
+							}
+							// else decrement timer
+							else {
+								obj.objectType.lifetime--;
+							}
+						}	
+						// else if gem was in goal, reset lifetime
+						else if (obj.objectType.inGoal) {
+							obj.objectType.inGoal = false;
+							obj.objectType.lifetime = gemScoreTime;
 						}
 						break;
 					default:
@@ -925,11 +928,16 @@ function update() {
 				
 				// if we're the host, notify the server of the end
 				if (IS_HOST) {
+						
+					// temporary version of user scores
+					var playerEndScore = player.score;
+					var opponentEndScore = opponent.score;
 					
 					// forcibly count all gems that are in the goal
 					for (var i = 0; i < allObj.length; i++) {
 						var obj = allObj[i];
 						
+						// loop only the gems
 						if (obj.objectType) 
 						if (obj.objectType.name === "Gem") {
 							
@@ -938,13 +946,16 @@ function update() {
 								// score based on color of gem
 								switch (obj.objectType.color) {
 									case COLORS.ORANGE:
-										player.score += 1;
+										socket.emit("score", { side: player.side, points: 1 });
+										playerEndScore += 1;
 										break;
 									case COLORS.GREEN:
-										player.score += 2;
+										socket.emit("score", { side: player.side, points: 2 });
+										playerEndScore += 2;
 										break;
 									case COLORS.PURPLE:
-										player.score += 3;
+										socket.emit("score", { side: player.side, points: 3 });
+										playerEndScore += 3;
 										break;
 								}
 								
@@ -959,13 +970,16 @@ function update() {
 								// score based on color of gem
 								switch (obj.objectType.color) {
 									case COLORS.ORANGE:
-										opponent.score += 3;
+										socket.emit("score", { side: player.side, points: 3 });
+										opponentEndScore += 3;
 										break;
 									case COLORS.GREEN:
-										player.score += 2;
+										socket.emit("score", { side: player.side, points: 2 });
+										opponentEndScore += 2;
 										break;
 									case COLORS.PURPLE:
-										player.score += 1;
+										socket.emit("score", { side: player.side, points: 1 });
+										opponentEndScore += 1;
 										break;
 								}
 								
@@ -978,7 +992,7 @@ function update() {
 					}
 					
 					// send scores so server can distribute status update events
-					socket.emit("gameComplete", { hostScore: player.score, clientScore: opponent.score });
+					socket.emit("gameComplete", { hostScore: playerEndScore, clientScore: opponentEndScore });
 				}
 			}
 		}

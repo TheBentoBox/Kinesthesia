@@ -7,18 +7,16 @@ function fillStats() {
 	
 	// only attempt calculation if they've played yet
 	if (userdata.gamesPlayed > 0) {
-		var pctWins = ((userdata.gamesWon / userdata.gamesPlayed) * 100) + "%";
-		var pctTied = ((userdata.gamesTied / userdata.gamesPlayed) * 100) + "%";
-		var pctLost = ((userdata.gamesLost / userdata.gamesPlayed) * 100) + "%";
-		
-		console.log(userdata);
+		var pctWins = ((Math.floor(userdata.gamesWon / userdata.gamesPlayed * 10000))/100) + "%";
+		var pctTied = ((Math.floor(userdata.gamesTied / userdata.gamesPlayed * 10000))/100) + "%";
+		var pctLost = ((Math.floor(userdata.gamesLost / userdata.gamesPlayed * 10000))/100) + "%";
 		
 		// catch if they've won all of their games
 		if (userdata.gamesLost === 0) {
 			var winLossRatio = "All  " + userdata.gamesPlayed + " games played won. Good job!";
 		}
 		else {
-			var winLossRatio = (userdata.gamesWon / userdata.gamesLost) + " wins per 1 loss";
+			var winLossRatio = ((Math.floor(userdata.gamesWon / userdata.gamesLost * 100))/100) + " wins per 1 loss";
 		}
 	}
 	else {

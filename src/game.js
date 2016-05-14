@@ -119,7 +119,7 @@ function createRoom() {
 	queue[1].join(name);
 	
 	// notify users of new game
-	io.sockets.in(name).emit("gameMsg", {msg: "Opponent connected. Starting the game. Get the gems into your base to score."});
+	io.sockets.in(name).emit("serverMsg", {msg: "Opponent connected. Starting the game. Get the gems into your base to score."});
 	
 	// create the new game
 	var newGame = new GameManager(io, name, queue[0], queue[1]);
@@ -150,7 +150,7 @@ function onJoin(socket) {
 			queue.push(socket);
 			
 			// notify user of successful join
-			socket.emit("gameMsg", {msg: "Waiting for an opponent..."});
+			socket.emit("serverMsg", {msg: "Waiting for an opponent..."});
 			
 			// create a new game if 2 or more players are waiting
 			if (queue.length >= 2) {	
@@ -159,7 +159,7 @@ function onJoin(socket) {
 		}
 		else {
 			// notify user of failed join
-			socket.emit("gameMsg", {msg: "You are already in the user queue."});
+			socket.emit("serverMsg", {msg: "You are already in the user queue."});
 		}
 	});
 }
@@ -193,8 +193,12 @@ function onUsersRequest(socket) {
 // FUNCTION: handle user disconnect
 function onDisconnect(socket) {
 	socket.on("disconnect", function(data) {
+		var index = queue.indexOf(socket);
+		
 		// delete user
-		delete queue[socket.name];
+		if (index != -1) {
+			queue.splice(index, 1);
+		}
 	});
 }
 
