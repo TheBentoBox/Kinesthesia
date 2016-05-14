@@ -39,7 +39,7 @@ var ABILITIES = {
 		maxForce: 1.5
 	},
 	GRAVITY_WELL: {
-		name: "Gravity Well",
+		name: "Gravity_Well",
 		src: "assets/images/iconGravityWell.png",
 		objRadius: 15,
 		lifetime: 300,
@@ -49,6 +49,22 @@ var ABILITIES = {
 		maxForce: 0.1
 	}
 };
+
+// ability cooldowns
+var abilityCooldowns = {
+	Cannonball: {
+		cooldown: 0,
+		maxCooldown: 30
+	},
+	Grenade: {
+		cooldown: 0,
+		maxCooldown: 60
+	},
+	Gravity_Well: {
+		cooldown: 0,
+		maxCooldown: 600
+	}
+}
 
 // general image src list
 var IMAGES = {
@@ -62,7 +78,7 @@ var IS_HOST = false; // whether this user is the host
 // Game control variables
 var gameComplete = false; // whether or not the game has finished yet
 var gameInitialized = false; // whether main object loop has started, only relevant for host
-var gameTime = 600; // time left in this game
+var gameTime = 3600; // time left in this game
 
 // Gem related variables
 var dripGemsTimeoutID = -1; // ID of dripGems timeout, used by host, cancelled when game ends
@@ -357,8 +373,8 @@ function initializeMatter() {
 function initializeInput() {
 	// setup canvas mouse down behavior
 	canvas.addEventListener('mousedown', function(e) {
-		// only accept left clicks here
-		if (e.which != 1) return;
+		// only accept left clicks here, and only if the ability is cooled down
+		if (e.which != 1 || abilityCooldowns[player.currentAbility.name].cooldown > 0) return;
 		
 		e.stopPropagation();
 		e.preventDefault();
@@ -444,10 +460,13 @@ function initializeInput() {
 		// set special object properties
 		switch (newBody.objectType.name) {
 			case "Cannonball":
+				abilityCooldowns["Cannonball"].cooldown = abilityCooldowns["Cannonball"].maxCooldown;
 				break;
 			case "Grenade":
+				abilityCooldowns["Grenade"].cooldown = abilityCooldowns["Grenade"].maxCooldown;
 				break;
-			case "Gravity Well":
+			case "Gravity_Well":
+				abilityCooldowns["Gravity_Well"].cooldown = abilityCooldowns["Gravity_Well"].maxCooldown;
 				Body.setAngularVelocity(newBody, .1);
 				newBody.collisionFilter.category = 0x0002;
 				newBody.collisionFilter.mask = newBody.collisionFilter.category;
@@ -479,6 +498,7 @@ function initializeInput() {
 		
 		socket.emit("abilityChange", player.currentAbility.name);
 		windowManager.modifyImage("playerHUD", "currAbilityImg", "image", { image: player.currentAbility.img });
+		windowManager.modifyBar("playerHUD", "abilityCooldown", "target", { tgtVar: abilityCooldowns[player.currentAbility.name].cooldown, tgtMax: abilityCooldowns[player.currentAbility.name].maxCooldown, tgtMin: 0 });
 	});
 
 	// use of other various keys, e.g. number keys to switch between abilities
@@ -512,22 +532,24 @@ function initializeInput() {
 // INITIAL UI SETUP
 function setupUI() {
 	//{ PLAYER INFO HUD //
-	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 150), 0, 150, 50);
-	windowManager.modifyUI("playerHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
+	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 200), 0, 200, 65);
+	windowManager.modifyUI("playerHUD", "fill", {color: "rgb(0, 0, 0)"});
 	windowManager.modifyUI("playerHUD", "border", {color: COLORS[player.side], width: "1px"});
 	windowManager.makeText("playerHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
 	windowManager.makeText("playerHUD", "score", 15, 15, 50, 50, player.score.toString(), "12pt 'Roboto'", "white");
-	windowManager.makeImage("playerHUD", "currAbilityImg", 85, 0, 50, 50, player.currentAbility.img);
+	windowManager.makeImage("playerHUD", "currAbilityImg", 135, 0, 50, 50, player.currentAbility.img);
+	windowManager.makeBar("playerHUD", "abilityCooldown", 135, 55, 50, 5, 0, abilityCooldowns["Cannonball"].maxCooldown, 0);
+	windowManager.modifyBar("playerHUD", "abilityCooldown", "fill", { backColor: "rgb(100,100,100)", foreColor: COLORS[player.side] });
 	windowManager.toggleUI("playerHUD");
 	//} end PLAYER INFO HUD
 	
 	//{ OPPONENT INFO HUD //
-	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 150), 0, 150, 50);
-	windowManager.modifyUI("opponentHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
+	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 200), 0, 200, 65);
+	windowManager.modifyUI("opponentHUD", "fill", {color: "rgb(0, 0, 0)"});
 	windowManager.modifyUI("opponentHUD", "border", {color: COLORS[opponent.side], width: "1px"});
 	windowManager.makeText("opponentHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Roboto'", "white");
 	windowManager.makeText("opponentHUD", "score", 15, 15, 50, 50, opponent.score.toString(), "12pt 'Roboto'", "white");
-	windowManager.makeImage("opponentHUD", "currAbilityImg", 85, 0, 50, 50, opponent.currentAbility.img);
+	windowManager.makeImage("opponentHUD", "currAbilityImg", 135, 0, 50, 50, opponent.currentAbility.img);
 	windowManager.toggleUI("opponentHUD");
 	//} end OPPONENT INFO HUD
 
@@ -719,7 +741,7 @@ function update() {
 	// draw UI
 	ctxUI.clearRect(0, 0, canvasUI.width, canvasUI.height);
 	draw();
-	game.windowManager.updateAndDraw([{name: "time", value: [(Math.ceil(gameTime/60)).toString()]}]);
+	game.windowManager.updateAndDraw([{name: "time", value: [(Math.ceil(gameTime/60)).toString()]}, {name: "abilityCooldown", value: abilityCooldowns[player.currentAbility.name].cooldown}]);
 	
 	// only perform object updates and timing while the game is running
 	if (!gameComplete) {
@@ -750,6 +772,7 @@ function update() {
 							);
 						}
 						break;
+						
 					case "Grenade":
 						// decrement lifetime
 						obj.objectType.lifetime--;
@@ -780,7 +803,8 @@ function update() {
 							);
 						}
 						break;
-					case "Gravity Well":
+						
+					case "Gravity_Well":
 						// decrement lifetime
 						obj.objectType.lifetime--;
 						
@@ -997,6 +1021,13 @@ function update() {
 			}
 		}
 	}
+	
+	abilityCooldowns["Cannonball"].cooldown--;
+	abilityCooldowns["Cannonball"].cooldown = Math.max(abilityCooldowns["Cannonball"].cooldown, 0);
+	abilityCooldowns["Grenade"].cooldown--;
+	abilityCooldowns["Grenade"].cooldown = Math.max(abilityCooldowns["Grenade"].cooldown, 0);
+	abilityCooldowns["Gravity_Well"].cooldown--;
+	abilityCooldowns["Gravity_Well"].cooldown = Math.max(abilityCooldowns["Gravity_Well"].cooldown, 0);
 	
 	// request next frame
 	requestAnimationFrame(update);
