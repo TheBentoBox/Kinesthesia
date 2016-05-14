@@ -78,7 +78,7 @@ var IS_HOST = false; // whether this user is the host
 // Game control variables
 var gameComplete = false; // whether or not the game has finished yet
 var gameInitialized = false; // whether main object loop has started, only relevant for host
-var gameTime = 3600; // time left in this game
+var gameTime = 600; // time left in this game
 
 // Gem related variables
 var dripGemsTimeoutID = -1; // ID of dripGems timeout, used by host, cancelled when game ends
@@ -994,15 +994,15 @@ function update() {
 								// score based on color of gem
 								switch (obj.objectType.color) {
 									case COLORS.ORANGE:
-										socket.emit("score", { side: player.side, points: 3 });
+										socket.emit("score", { side: opponent.side, points: 3 });
 										opponentEndScore += 3;
 										break;
 									case COLORS.GREEN:
-										socket.emit("score", { side: player.side, points: 2 });
+										socket.emit("score", { side: opponent.side, points: 2 });
 										opponentEndScore += 2;
 										break;
 									case COLORS.PURPLE:
-										socket.emit("score", { side: player.side, points: 1 });
+										socket.emit("score", { side: opponent.side, points: 1 });
 										opponentEndScore += 1;
 										break;
 								}

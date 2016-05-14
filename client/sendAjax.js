@@ -8,10 +8,10 @@ function sendAjax(action, data) {
 		data: data,
 		dataType: "json",
 		success: function(result, status, xhr) {
-			window.location = result.redirect;
+			console.log("Server updated stats successfully")
 		},
 		error: function(xhr, status, error) {
-			var messageObj = JSON.parse(xhr.responseText);
+			console.log(error);
 		}
 	});        
 }

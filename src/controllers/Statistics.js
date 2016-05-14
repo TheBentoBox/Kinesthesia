@@ -42,7 +42,7 @@ var updateStats = function(req, res) {
 			}
 			
 			// good to go
-			return res.status(200);
+			return res.status(200).json({ redirect: '/game' });
 		});
 	});
 };
