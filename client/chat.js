@@ -9,38 +9,43 @@ function connectChat() {
 	socket = (socket || io.connect());
 	socket.emit("userdata", userdata);
 	
-	// update chat window on connect
-	socket.on('connect', function(data) {
+	// General 'create message' to add a bubble to the chat window
+	function createMessage(user, message, className, color) {
+		
+		// Elements repesenting the message bubble and the message text
 		var p = document.createElement("p");
 		var pMsg = document.createElement("span");
-		p.innerHTML = "<strong>SERVER</strong>: ";
-		p.className += "serverMsg";
-		pMsg.textContent = "Connected to chat!";
+		
+		// Set up bubble, giving it the username and correct color class/property
+		p.innerHTML = "<strong>" + user + "</strong>: ";
+		p.className += className;
+		if (color != undefined)
+			p.style.backgroundColor = color;
+		
+		// Fill bubble with message
+		pMsg.textContent = message;
+		
+		// Attach message to bubble, and bubble to chat window
 		p.appendChild(pMsg);
 		chatWindow.appendChild(p);
+	}
+	
+	// update chat window on connect
+	socket.on('connect', function(data) {
+		
+		document.querySelector('.serverMsg').innerHTML =  "Connected to chat!";
 	});
 	
 	// listener for msg event
 	socket.on('msg', function(data) {
 		
-		var p = document.createElement("p");
-		var pMsg = document.createElement("span");
-		p.innerHTML = "<strong>" + data.name + "</strong>: ";
-		p.className += "otherUserMsg";
-		pMsg.textContent = data.msg;
-		p.appendChild(pMsg);
-		chatWindow.appendChild(p);
+		createMessage(data.name, data.msg, "otherUserMsg", (data.name == globalOpponentName ? globalOpponentColor : undefined));
 	});
 	
 	// listener for msg event
 	socket.on('serverMsg', function(data) {
-		var p = document.createElement("p");
-		var pMsg = document.createElement("span");
-		p.innerHTML = "<strong>SERVER</strong>: ";
-		p.className += "serverMsg";
-		pMsg.textContent = data.msg;
-		p.appendChild(pMsg);
-		chatWindow.appendChild(p);
+		
+		createMessage("SERVER", data.msg, "serverMsg", undefined);
 	});
 	
 	// allow users to send messages (with the enter key)
@@ -52,11 +57,13 @@ function connectChat() {
 				return;
 			}
 			
-			var p = document.createElement("p");
-			p.textContent = chatInput.value;
-			p.className += "userMsg";
-			chatWindow.appendChild(p);
+			// add the message to our own window
+			createMessage(userdata.username, chatInput.value, "userMsg", globalUserColor);
+			
+			// emit the message to the other users
 			socket.emit('chatMsg', { name: userdata.username, msg: chatInput.value } );
+			
+			// slide up the chat window and clear the input box	
 			chatWindow.scrollTop = chatWindow.scrollHeight - chatWinHeight;
 			chatInput.value = "";
 		}

@@ -8,7 +8,8 @@ function sendAjax(action, data) {
 		data: data,
 		dataType: "json",
 		success: function(result, status, xhr) {
-			console.log("Server updated stats successfully")
+			console.log("Server updated stats successfully");
+			if (result.redirect != undefined) window.location = result.redirect;
 		},
 		error: function(xhr, status, error) {
 			console.log(error);

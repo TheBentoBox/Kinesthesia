@@ -20,7 +20,7 @@ html(lang="en")
         li
           a(href="/usersOnline") Online Users
       div#chatWindow
-        p You are not logged in.
+        p.serverMsg You are not logged in.
       textarea#chatInput(placeholder="Type here to chat", rows="10", cols="25")
     
     block content
@@ -36,4 +36,4 @@ html(lang="en")
       if ("#{stats.username}" != "undefined")
         userdata.username = "!{stats.username}"
       Object.freeze(userdata)
-      var socket;
+      var socket, globalUserColor, globalOpponentName, globalOpponentColor;

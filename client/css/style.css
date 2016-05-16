@@ -116,13 +116,13 @@ h1 {
 
 #chatWindow .userMsg {
 	text-align: right;
-	background-color: #600960;
+	background-color: #498749;
 	color: #E8CDE8;
 	font-family: courier;
 }
 
 #chatWindow .otherUserMsg {
-	background-color: #D6861A;
+	background-color: #286628;
 	color: #FFF3E2;
 	font-family: courier;
 }

@@ -157,7 +157,7 @@ function setupSocket() {
 	socket.on("play", initializeGame);
 	
 	// Listener for user connection event
-	socket.on("connect", function(){
+	socket.on("connect", function() {
 		console.log("Connecting...");
 		
 		socket.emit("join", userdata);
@@ -233,6 +233,14 @@ function setupSocket() {
 		// apply all keys in the data object to they opponent
 		for (var key in data) {
 			opponent[key] = data[key];
+			
+			// Update global variables about the opponent when we receive their name/side
+			if (key == "name") {
+				globalOpponentName = data[key];
+			}
+			if (key == "side") {
+				globalOpponentColor = COLORS[data[key]];
+			}
 		}
 		
 		// explicitly check lastClick so it applies correctly
@@ -246,6 +254,10 @@ function setupSocket() {
 		// apply all keys in the data object to they opponent
 		for (var key in data) {
 			player[key] = data[key];
+			
+			if (key == "side") {
+				globalUserColor = COLORS[data[key]];
+			}
 		}
 	});
 	
