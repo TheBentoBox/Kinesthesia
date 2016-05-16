@@ -78,7 +78,7 @@ var IS_HOST = false; // whether this user is the host
 // Game control variables
 var gameComplete = false; // whether or not the game has finished yet
 var gameInitialized = false; // whether main object loop has started, only relevant for host
-var gameTime = 600; // time left in this game
+var gameTime = 3600; // time left in this game
 
 // Gem related variables
 var dripGemsTimeoutID = -1; // ID of dripGems timeout, used by host, cancelled when game ends
