@@ -4,6 +4,14 @@ block append content
   article
     div#canvasContainer
       canvas(width="1200", height="640", id="UI")
+    div#rules
+      h2 Rules:
+      ul
+        li Score points by getting gems into your goal. Keep your opponent from doing the same.
+        li 1pt for gems of your color, 2pts for green gems, 3pts for gems of the opponent's color.
+        li QWE/123/Scroll to cycle abilities.
+        li Drag with left mouse to fire abilities. Drag further to launch faster.
+        li Score more points than your opponent to win!
     input#token(type="hidden", name="_csrf", value="#{csrfToken}")
 
 block append scripts
