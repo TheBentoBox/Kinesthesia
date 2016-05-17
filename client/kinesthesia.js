@@ -281,15 +281,15 @@ function setupSocket() {
 	socket.on("score", function(data) {
 		// player point
 		if (data.side === player.side) {
-			windowManager.modifyText("gameHUD", "message", "text", {string: userdata.username + " scores a point!", css: "12pt 'Roboto'", color: "white"});
+			windowManager.modifyText("gameHUD", "message", "text", {string: userdata.username + " scores a point!", css: "12pt 'Audiowide'", color: "white"});
 			player.score += data.points;
-			windowManager.modifyText("playerHUD", "score", "text", {string: player.score.toString(), css: "12pt 'Roboto'", color: "white"});
+			windowManager.modifyText("playerHUD", "score", "text", {string: player.score.toString(), css: "12pt 'Audiowide'", color: "white"});
 		}
 		// opponent point
 		else {
-			windowManager.modifyText("gameHUD", "message", "text", {string: opponent.name + " scores a point!", css: "12pt 'Roboto'", color: "white"});
+			windowManager.modifyText("gameHUD", "message", "text", {string: opponent.name + " scores a point!", css: "12pt 'Audiowide'", color: "white"});
 			opponent.score += data.points;
-			windowManager.modifyText("opponentHUD", "score", "text", {string: opponent.score.toString(), css: "12pt 'Roboto'", color: "white"});
+			windowManager.modifyText("opponentHUD", "score", "text", {string: opponent.score.toString(), css: "12pt 'Audiowide'", color: "white"});
 		}	
 	});
 	
@@ -302,7 +302,7 @@ function setupSocket() {
 		sendAjax("/updateStats", data);
 		
 		// update the main message box to say how they did
-		windowManager.modifyText("gameHUD", "message", "text", { string: "You " + data.status + "!", css: "12pt 'Roboto'", color: "white"});
+		windowManager.modifyText("gameHUD", "message", "text", { string: "You " + data.status + "!", css: "12pt 'Audiowide'", color: "white"});
 		
 		// stop running the game if we're the host
 		if (IS_HOST) {
@@ -339,7 +339,7 @@ function initializeGame() {
 	setTimeout(update, 100);
 	
 	// Notify user of game start
-	windowManager.modifyText("gameHUD", "message", "text", {string: "Game started. You are playing against " + opponent.name + ".", css: "12pt 'Roboto'", color: "white"});
+	windowManager.modifyText("gameHUD", "message", "text", {string: "Game started. You are playing against " + opponent.name + ".", css: "12pt 'Audiowide'", color: "white"});
 }
 
 // FUNCTION: Loads in some images
@@ -549,8 +549,8 @@ function setupUI() {
 	windowManager.makeUI("playerHUD", (player.side * canvas.width) - (player.side * 200), 0, 200, 65);
 	windowManager.modifyUI("playerHUD", "fill", {color: "rgb(0, 0, 0)"});
 	windowManager.modifyUI("playerHUD", "border", {color: COLORS[player.side], width: "1px"});
-	windowManager.makeText("playerHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Roboto'", "white");
-	windowManager.makeText("playerHUD", "score", 15, 15, 50, 50, player.score.toString(), "12pt 'Roboto'", "white");
+	windowManager.makeText("playerHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, userdata.username, "12pt 'Audiowide'", "white");
+	windowManager.makeText("playerHUD", "score", 15, 15, 50, 50, player.score.toString(), "12pt 'Audiowide'", "white");
 	windowManager.makeImage("playerHUD", "currAbilityImg", 135, 0, 50, 50, player.currentAbility.img);
 	windowManager.makeBar("playerHUD", "abilityCooldown", 135, 55, 50, 5, 0, abilityCooldowns["Cannonball"].maxCooldown, 0);
 	windowManager.modifyBar("playerHUD", "abilityCooldown", "fill", { backColor: "rgb(100,100,100)", foreColor: COLORS[player.side] });
@@ -561,8 +561,8 @@ function setupUI() {
 	windowManager.makeUI("opponentHUD", (opponent.side * canvas.width) - (opponent.side * 200), 0, 200, 65);
 	windowManager.modifyUI("opponentHUD", "fill", {color: "rgb(0, 0, 0)"});
 	windowManager.modifyUI("opponentHUD", "border", {color: COLORS[opponent.side], width: "1px"});
-	windowManager.makeText("opponentHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Roboto'", "white");
-	windowManager.makeText("opponentHUD", "score", 15, 15, 50, 50, opponent.score.toString(), "12pt 'Roboto'", "white");
+	windowManager.makeText("opponentHUD", "username", 45 , 15, canvas.width/10, canvas.height/5, opponent.name, "12pt 'Audiowide'", "white");
+	windowManager.makeText("opponentHUD", "score", 15, 15, 50, 50, opponent.score.toString(), "12pt 'Audiowide'", "white");
 	windowManager.makeImage("opponentHUD", "currAbilityImg", 135, 0, 50, 50, opponent.currentAbility.img);
 	windowManager.toggleUI("opponentHUD");
 	//} end OPPONENT INFO HUD
@@ -571,8 +571,8 @@ function setupUI() {
 		windowManager.makeUI("gameHUD", canvas.width/2 - 250, 0, 500, 75);
 		windowManager.modifyUI("gameHUD", "fill", {color: "rgba(0, 0, 0, 0.5)"});
 		windowManager.modifyUI("gameHUD", "border", {color: COLORS.GREEN, width: "1px"});
-		windowManager.makeText("gameHUD", "message", 35 , 15, 430, 30, "", "12pt 'Roboto'", "white");
-		windowManager.makeText("gameHUD", "time", 225, 40, 75, 30, "%v sec", "12pt 'Roboto'", "white");
+		windowManager.makeText("gameHUD", "message", 35 , 15, 430, 30, "", "12pt 'Audiowide'", "white");
+		windowManager.makeText("gameHUD", "time", 225, 40, 75, 30, "%v sec", "12pt 'Audiowide'", "white");
 		windowManager.toggleUI("gameHUD");
 	//} end GAME INFO HUD
 }

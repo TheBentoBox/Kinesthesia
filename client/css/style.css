@@ -286,7 +286,10 @@ canvas {
 	text-align: center;
 }
 
-
+#rules {
+	width: 40%;
+	margin: 0 auto;
+}
 
 /* ONLINE USERS LIST PAGE */
 #onlineUsersContainer {
