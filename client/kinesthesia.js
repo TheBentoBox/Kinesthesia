@@ -145,6 +145,8 @@ var opponent = {
 
 //} GAME VARS
 
+
+
 // FUNCTION: connect socket and setup callbacks
 function setupSocket() {
 

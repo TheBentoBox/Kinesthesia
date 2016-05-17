@@ -11,6 +11,25 @@ var signupPage = function(req, res) {
 	res.render('signup', { csrfToken: req.csrfToken() });
 };
 
+var documentationPage = function(req, res) {
+	
+	// Attempt to return a page which displays the user's account stats
+	Statistics.StatisticsModel.findByOwner(req.session.account._id, function(err, docs) {
+		
+		// catch errors creating the page
+		if (err) {
+			console.log(err);
+			return res.status(400).json({ error: "An error occurred while generating the game page" });
+		}
+		
+		// grab the session username and return it with the account stats
+		docs.username = req.session.account.username;
+		found = true;
+		
+		res.render('documentation', { csrfToken: req.csrfToken(), stats: docs });
+	});
+};
+
 var logout = function(req, res) {
 	req.session.destroy();
 	res.redirect('/');
@@ -188,6 +207,7 @@ module.exports.login = login;
 module.exports.logout = logout;
 module.exports.signupPage = signupPage;
 module.exports.signup = signup;
+module.exports.documentationPage = documentationPage;
 module.exports.onlinePage = onlinePage;
 module.exports.gamePage = gamePage;
 module.exports.accountPage = accountPage;

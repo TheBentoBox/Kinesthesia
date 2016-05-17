@@ -116,11 +116,6 @@ class GameManager {
 		}.bind(this));
 	}
 	
-	// Basic distance formula
-	distance(a, b) {
-		return Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
-	}
-	
 	// Callback for scoring
 	onScore(socket) {
 		socket.on("score", function(data) {

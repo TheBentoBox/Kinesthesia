@@ -18,6 +18,9 @@ html, body {
 header {
 	height: 150px;
 	padding-top: 40px;
+	width: 80%;
+	position: absolute;
+	right: 0;
 	background-color: #031003;
 	text-align: center;
 	font-size: 1.5em;
@@ -40,6 +43,7 @@ h1 {
 }
 
 #navColumn {
+	position: fixed;
 	height: 100%;
 	width: 20%;
 }
@@ -139,9 +143,31 @@ h1 {
 
 article {
 	width: 80%;
+	position: relative;
+	top: 150px;
 	float: right;
 	text-align: center;
 	color: #D6F2D6;
+}
+
+/* DOCUMENTATION */
+#documentation {
+	padding: 20px 20px 20px 40px;
+	text-align: left;
+}
+#documentation h2 {
+	color: #75B275;
+	margin: 35px 0 10px 0;
+}
+#documentation ul, #documentation p {
+	font-size: 1.15em;
+}
+#documentation li {
+	margin-left: 25px;
+}
+#documentation img {
+	float: right;
+	margin: 35px;
 }
 
 

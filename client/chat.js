@@ -1,4 +1,6 @@
 function connectChat() {
+	if (userdata == undefined) return;
+	
 	// grab references to page chat elements
 	var chatWindow = document.querySelector('#chatWindow');
 	var chatInput = document.querySelector('#chatInput');

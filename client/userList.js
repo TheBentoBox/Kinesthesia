@@ -31,6 +31,7 @@ function getUsers() {
 					userList.innerHTML += "<li><strong>Name</strong>: " + users[i].username + "<br />" +
 												       "<strong>Games Played</strong>: " + users[i].gamesPlayed + "</span><br />" +
 												       "<strong>Games Won</strong>: " + users[i].gamesWon + "<br />" +
+												       "<strong>Games Tied</strong>: " + users[i].gamesTied + "<br />" +
 												       "<strong>Games Lost</strong>: " + users[i].gamesLost + "<br /></li>"
 				}
 			}

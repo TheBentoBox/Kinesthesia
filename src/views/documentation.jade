@@ -1,6 +1,39 @@
 extends ./base.jade
 block append content
-  article
+  article#documentation
+    h2 Description & Purpose
+    p Kinesthesia is a multi-user realtime physics action game, where players compete to get the most points within one minute. Players use three abilities - cannonballs, bombs, and gravity wells - to pull gems towards their own goal, as well as trying to keep their enemy from getting gems into their own goal. Gems are color coded per-player with green gems being neutral, and you gain more points for retrieving your opponent's gems (and less for your own).
+    br
+    p The project is meant as an exercise to display knowledge of Node.js and MVC frameworks in a fun way, giving users of the app something to compete over.
+
     h2 App Features
-	  ul
-	    li  Multiple users can attempt to connect
+    ul
+     li  #[strong Infinitely scaling]: 1v1 game rooms are dynamically created as players enter the game page.
+     li  #[strong Synced physics]: the physics world is synced live between the two players, with one acting as the host, running the updates on the game world. We used Matter.js as the physics engine.
+     li  #[strong WebGL graphics (mostly)]: Matter.js renders to a canvas through WebGL via a Pixi.js renderer. The only thing drawn through canvas instead of WebGL is the HUD.
+     li  #[strong Site-wide colored chat]: the chat window syncs between all users on all pages. Users that are in a game see them and their opponent's messages as the color they are in their current game (e.g. the orange player sends orange messages to themself and their enemy)
+     li  #[strong User Accounts/Stats]: user accounts are stored server-side with MongoDB, while sessions are handled by Redis. We store stats based on games, including wins, losses, and ties. These are viewable on the account page, and the Online Users page shows the stats of each online user.
+   
+    h2 Post-mortem
+    p The project went well, but it was definitely a challenge. Neither of us have backgrounds as server developers prior to this class, let alone experience with syncing up a simulating physics world. It took weeks just to get the world to simulate properly across the client without immense lag and rubberbanding or desynchronizing entirely. There is still noticeable rubberbanding when you're the client user as opposed to the game host, but it's playable and you can see what's going on.
+    br
+    p If we were to redo this project with our current knowledge, the client-server-client communication would be handled differently. e.g. Currently there would be the potential for desynchronization when a client doesn't receive an object removal packet from the server. The server doesn't do any sort of confirmation between clients on whether or not they have the same objects it just relays info from the host to the client. If the client has an object in their world that the host doesn't, it will never be properly removed from the client user. This could be remedied with server dictionary for each user that ran comparisons for the presence of objects, and told the client user to remove objects that don't exist on the host. We didn't have time to implement this, so currently clients just forcibly remove objects that have finished their lifetime without server confirmation (which works alright - those should never exist anyways).
+    br
+    p Additionally, the project probably would be developed further if we redid it, because we spent so long on the architecture that the project content itself was only added towards the end. We redid the client-server communications entirely partway through, making it so one client was the host with the server acting as an authoritative middleman, as opposed to the server attempting to run the physics and lagging horrendously. A lot of time could have been saved by using a client-host from the start.
+    br
+    p Overall, we're glad we did the project because it turned out as well as we could have hoped given the rigorous nature of what we decided to do.
+
+    h2 Architecture
+    img(src="assets/images/diagram.png")
+    p One of the users acts as the host (in fact, it is always the user on the left, the orange one). This person receives a notification that they are the host, and runs game loops via setTimeout and requestAnimationFrame that run manual object updates (AKA, making the abilities happen), and emits the world objects to the other user. The host is also in charge of adding new gems to the world and detecting when points have been scored.
+    br
+    p The host emits an update about its world objects 10 times per second. socket.io hits a stack overflow error when trying to send Matter physics bodies directly, so all physics bodies that are requested by the clients are first passed through a processBody function. This creates a minified object literal containing only the necessary properties of the object, which is then small enough to be sent through socket.io. This data is passed up to the server, who then sends it back down to both clients, who then create the new object and apply the object literal's properties to it. Even the user who requested the object doesn't actually create it until receiving the packet back from the server.
+    br
+    p Both clients can add and remove objects, but they must do so through socket.io event requests to the server ("requestAddBody" and "requestRemoveBody"). Again, there is currently no confirmation from the server on whether this succeeded in reaching each client. There are other precautions in place that help keep the clients synced, e.g. the same event is used for receiving a new body and updating an old one. The user will always check if a received object exists already (by searching by object ID), and if not it creates it as a new object. This means clients can't "miss an object creation packet", because every object update is also a creation. If they miss a removal packet, clients forcibly remove dead objects anyways. If they remove something they shouldn't have, they'll receive it again in the next update.
+    br
+    p All other game data is sent in the same way - client formulates the request, sends it to the server, and the server sends it to both. The host also runs its own "resting bodies" system, which keeps track of object movement to only send objects that are moving or just finished moving. This minimizes traffic when many of the world objects are sitting still on the floor, for example.
+    
+    h2 Contributions
+    p #[strong Jake]: client-server communication, game logic, user accounts & stats, art
+    br
+    p #[strong Joe]: In-game user interface, three user abilities, physics manipulation
